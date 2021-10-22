@@ -236,3 +236,4 @@ G.start_game()
 # G.B.find_possible_moves(G.W.soldiers+[G.W.king])
 # G.print_all()
 # vis.loop()
+# Modifica!
