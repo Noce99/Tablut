@@ -165,7 +165,7 @@ class Game:
             self.print_all()
         self.W.find_possible_moves(self.B.soldiers)
         self.B.find_possible_moves(self.W.soldiers + [self.W.king])
-        time.sleep(0.5)
+        # time.sleep(0.5)
         if again_non_human:
             self.non_human_move()
 
