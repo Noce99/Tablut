@@ -1,1 +1,2 @@
 # Tablut
+Run Game.py
