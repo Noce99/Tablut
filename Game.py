@@ -11,6 +11,7 @@ from visualizer import CROWN
 import random_player
 import socket
 
+# Aren: Significa “colui che regna come un’aquila”
 
 class Game:
 
@@ -122,7 +123,7 @@ class Game:
         if self.color_playing == "W":
             if self.white_player == "random":
                 move = random_player.get_white_random_move(self.W.soldiers, self.W.moves, self.W.king_moves)
-            elif self.white_player == "otherCPU":
+            elif self.white_player == "nuovaCPU":
                 move = None
             else:
                 move = random_player.get_white_random_move(self.W.soldiers, self.W.moves, self.W.king_moves)
@@ -172,7 +173,8 @@ class Game:
     def check_things(self, last_move, last_move_color):
         if self.W.king in BLUE:
             print("White WON!")
-            self.s_white.recv(8192)
+            if self.server:
+                self.s_white.recv(8192)
             if self.visualize:
                 vis.destroy_everything()
             else:
@@ -189,7 +191,8 @@ class Game:
                 elif last_move_color == "B" and pos == self.W.king:
                     if self.check_if_king_dead(pos):
                         print("Black WON!")
-                        self.s_black.recv(8192)
+                        if self.server:
+                            self.s_black.recv(8192)
                         if self.visualize:
                             vis.destroy_everything()
                         else:
@@ -268,7 +271,7 @@ class Game:
             socket_color.recv(8192)
 
 
-G = Game(visualize=True, white_player="random", black_player="random", server=False)
+G = Game(visualize=True, white_player="human", black_player="human", server=False)
 G.start_game()
 # G.W.find_possible_moves(G.B.soldiers)
 # G.B.find_possible_moves(G.W.soldiers+[G.W.king])
