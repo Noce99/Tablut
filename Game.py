@@ -8,8 +8,10 @@ from visualizer import BLUE
 from visualizer import GREY
 from visualizer import ORANGE
 from visualizer import CROWN
+from visualizer import SQ
 import random_player
 import socket
+
 
 # Aren: Significa “colui che regna come un’aquila”
 
@@ -44,8 +46,8 @@ class Game:
 
     def click_event(self, event):
         vis.print_all()
-        xx = int(event.x / 100)
-        yy = int(event.y / 100)
+        xx = int(event.x / SQ)
+        yy = int(event.y / SQ)
         e = COORD_L[xx] + COORD_N[yy]
         if e in self.W.soldiers:
             moves = self.W.moves[self.W.soldiers.index(e)]
@@ -71,9 +73,9 @@ class Game:
                     if self.server:
                         self.send_to_server(self.s_white, '{"from":"' + self.highlight.lower() + '","to":"' +
                                             e.lower() + '","turn":"WHITE"}')
-                    self.check_things(e, "W")
-                    vis.highlight_clear()
-                    self.print_all()
+                    self.check_things(self.highlight, e, "W")
+                    if self.visualize:
+                        self.print_all()
                     self.color_playing = "B"
                     self.W.find_possible_moves(self.B.soldiers)
                     self.B.find_possible_moves(self.W.soldiers + [self.W.king])
@@ -85,9 +87,9 @@ class Game:
                     if self.server:
                         self.send_to_server(self.s_white, '{"from":"' + self.highlight.lower() + '","to":"' +
                                             e.lower() + '","turn":"WHITE"}')
-                    self.check_things(e, "W")
-                    vis.highlight_clear()
-                    self.print_all()
+                    self.check_things(self.highlight, e, "W")
+                    if self.visualize:
+                        self.print_all()
                     self.color_playing = "B"
                     self.W.find_possible_moves(self.B.soldiers)
                     self.B.find_possible_moves(self.W.soldiers + [self.W.king])
@@ -99,9 +101,9 @@ class Game:
                     if self.server:
                         self.send_to_server(self.s_black, '{"from":"' + self.highlight.lower() + '","to":"' +
                                             e.lower() + '","turn":"BLACK"}')
-                    self.check_things(e, "B")
-                    vis.highlight_clear()
-                    self.print_all()
+                    self.check_things(self.highlight, e, "B")
+                    if self.visualize:
+                        self.print_all()
                     self.color_playing = "W"
                     self.W.find_possible_moves(self.B.soldiers)
                     self.B.find_possible_moves(self.W.soldiers + [self.W.king])
@@ -138,10 +140,11 @@ class Game:
                 if move[0] == "S":
                     self.send_to_server(self.s_white, '{"from":"' + move[1].lower() + '","to":"' + move[2].lower() +
                                         '","turn":"WHITE"}')
+                    self.check_things(move[1], move[2], "W")
                 else:
                     self.send_to_server(self.s_white, '{"from":"' + last_king_move.lower() + '","to":"' +
                                         move[2].lower() + '","turn":"WHITE"}')
-            self.check_things(move[2], "W")
+                    self.check_things(last_king_move, move[2], "W")
             self.color_playing = "B"
             if self.black_player != "human":
                 again_non_human = True
@@ -157,12 +160,11 @@ class Game:
             if self.server:
                 self.send_to_server(self.s_black, '{"from":"' + move[0].lower() + '","to":"' + move[2].lower() +
                                     '","turn":"BLACK"}')
-            self.check_things(move[2], "B")
+            self.check_things(move[0], move[2], "B")
             self.color_playing = "W"
             if self.white_player != "human":
                 again_non_human = True
         if self.visualize:
-            vis.highlight_clear()
             self.print_all()
         self.W.find_possible_moves(self.B.soldiers)
         self.B.find_possible_moves(self.W.soldiers + [self.W.king])
@@ -170,7 +172,7 @@ class Game:
         if again_non_human:
             self.non_human_move()
 
-    def check_things(self, last_move, last_move_color):
+    def check_things(self, last_move_start, last_move_arrive, last_move_color):
         if self.W.king in BLUE:
             print("White WON!")
             if self.server:
@@ -179,7 +181,7 @@ class Game:
                 vis.destroy_everything()
             else:
                 sys.exit(0)
-        around = self.W.get_around(last_move)
+        around = self.W.get_around(last_move_arrive)
         for pos in around:
             if pos is not None:
                 if last_move_color == "W" and pos in self.B.soldiers:
@@ -197,6 +199,9 @@ class Game:
                             vis.destroy_everything()
                         else:
                             sys.exit(0)
+        if self.visualize:
+            vis.highlight_clear()
+            vis.highlight_last_move_pos(last_move_start, last_move_arrive)
 
     def check_if_dead(self, pos, color):
         around = self.W.get_around(pos)

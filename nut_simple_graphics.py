@@ -16,15 +16,17 @@ last_mouse_y = 0
 
 
 class Grid:
-    def __init__(self, x, y, cell_size, cell_num, color):
+    def __init__(self, x, y, cell_size, cell_num, color, line_width=1):
         self.x = x
         self.y = y
         self.cell_size = cell_size
         self.cell_num = cell_num
         self.color = color
+        self.line_width = line_width
 
     def print(self):
-        print_grid(change_x(self.x), change_y(self.y), self.cell_size * zoom, self.cell_num, self.color)
+        print_grid(change_x(self.x), change_y(self.y), self.cell_size * zoom, self.cell_num, self.color,
+                   self.line_width)
 
 
 class Circle:
@@ -85,45 +87,45 @@ def dot(x, y, color):
     canvas.create_oval(x, y, x, y, fill=color)
 
 
-def print_grid(x, y, cell_size, cell_num, color):
+def print_grid(x, y, cell_size, cell_num, color, line_width):
     global_size = cell_size * cell_num
-    canvas.create_line(x, y, x + global_size, y, x + global_size, y + global_size, x, y + global_size, x, y, fill=color)
+    canvas.create_line(x, y, x + global_size, y, x + global_size, y + global_size, x, y + global_size, x, y, fill=color, width=line_width)
     for i in range(1, cell_num):
         xx = cell_size * i
-        canvas.create_line(x + xx, y, x + xx, y + global_size, fill=color)
+        canvas.create_line(x + xx, y, x + xx, y + global_size, fill=color, width=line_width)
     for i in range(1, cell_num):
         yy = cell_size * i
-        canvas.create_line(x, y + yy, x + global_size, y + yy, fill=color)
+        canvas.create_line(x, y + yy, x + global_size, y + yy, fill=color, width=line_width)
 
 
 def mouse_dragged(event):
-    global last_mouse_x
-    global last_mouse_y
-    global X
-    global Y
-    difference_x = last_mouse_x - event.x
-    difference_y = last_mouse_y - event.y
-    if sqrt(difference_x * difference_x + difference_y * difference_y) < 20:
-        X = X - difference_x / zoom
-        Y = Y - difference_y / zoom
-    last_mouse_x = event.x
-    last_mouse_y = event.y
-    print_all()
+    # global last_mouse_x
+    # global last_mouse_y
+    # global X
+    # global Y
+    # difference_x = last_mouse_x - event.x
+    # difference_y = last_mouse_y - event.y
+    # if sqrt(difference_x * difference_x + difference_y * difference_y) < 20:
+    #     X = X - difference_x / zoom
+    #     Y = Y - difference_y / zoom
+    # last_mouse_x = event.x
+    # last_mouse_y = event.y
+    # print_all()
     pass
 
 
 def mouse_wheel_up(_):
-    global zoom
-    if zoom < 100:
-        zoom = zoom * zoom_rate
-    print_all()
+    # global zoom
+    # if zoom < 100:
+    #     zoom = zoom * zoom_rate
+    # print_all()
     pass
 
 
 def mouse_wheel_down(_):
-    global zoom
-    zoom = zoom / zoom_rate
-    print_all()
+    # global zoom
+    # zoom = zoom / zoom_rate
+    # print_all()
     pass
 
 

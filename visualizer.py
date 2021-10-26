@@ -1,5 +1,6 @@
 import nut_simple_graphics as nsg
 
+SQ = 100  # SIZE OF A SQUARE
 COLOR_MAP = ("011222110",
              "100020001",
              "100000001",
@@ -22,14 +23,14 @@ def initialize(click_event):
     for i, e in enumerate(COLOR_MAP):
         for ii, ee in enumerate(e):
             if ee == "0":
-                nsg.add(nsg.Square(ii * 100, i * 100, ii * 100 + 100, i * 100 + 100, nsg.get_color(255, 233, 127)))
+                nsg.add(nsg.Square(ii * SQ, i * SQ, ii * SQ + SQ, i * SQ + SQ, nsg.get_color(255, 233, 127)))
             elif ee == "1":
-                nsg.add(nsg.Square(ii * 100, i * 100, ii * 100 + 100, i * 100 + 100, nsg.get_color(92, 249, 249)))
+                nsg.add(nsg.Square(ii * SQ, i * SQ, ii * SQ + SQ, i * SQ + SQ, nsg.get_color(92, 249, 249)))
             elif ee == "2":
-                nsg.add(nsg.Square(ii * 100, i * 100, ii * 100 + 100, i * 100 + 100, nsg.get_color(128, 128, 128)))
+                nsg.add(nsg.Square(ii * SQ, i * SQ, ii * SQ + SQ, i * SQ + SQ, nsg.get_color(128, 128, 128)))
             elif ee == "3":
-                nsg.add(nsg.Square(ii * 100, i * 100, ii * 100 + 100, i * 100 + 100, nsg.get_color(255, 128, 0)))
-    nsg.add(nsg.Grid(0, 0, 100, 9, nsg.get_color(0, 0, 0)))
+                nsg.add(nsg.Square(ii * SQ, i * SQ, ii * SQ + SQ, i * SQ + SQ, nsg.get_color(255, 128, 0)))
+    nsg.add(nsg.Grid(0, 0, SQ, 9, nsg.get_color(0, 0, 0)))
     nsg.print_all()
     nsg.func_biding("<Button-1>", click_event)
 
@@ -49,23 +50,32 @@ def print_piece(color, position, moves):
     all_moves.append(moves)
     if color == "W":
         c = nsg.get_color(255, 255, 255)
-        s = 45
+        s = int(SQ/2 - 0.05*SQ)
     elif color == "B":
         c = nsg.get_color(0, 0, 0)
-        s = 45
+        s = int(SQ/2 - 0.05*SQ)
     else:
         c = nsg.get_color(255, 102, 255)
-        s = 30
+        s = int(SQ/2 - 0.20*SQ)
     if len(position) == 2 and position[0] in COORD_L and position[1] in COORD_N:
-        nsg.add_tmp(nsg.Circle(COORD_L.find(position[0]) * 100 + 50, COORD_N.find(position[1]) * 100 + 50, s, c))
+        nsg.add_tmp(nsg.Circle(COORD_L.find(position[0]) * SQ + SQ/2, COORD_N.find(position[1]) * SQ + SQ/2, s, c))
     nsg.print_all()
 
 
 def highlight_pos(position):
     if len(position) == 2 and position[0] in COORD_L and position[1] in COORD_N:
-        nsg.add_super_tmp(nsg.SquareNotFill(COORD_L.find(position[0]) * 100, COORD_N.find(position[1]) * 100,
-                                            COORD_L.find(position[0]) * 100 + 100,
-                                            COORD_N.find(position[1]) * 100 + 100, nsg.get_color(128, 255, 0)))
+        nsg.add_super_tmp(nsg.Grid(COORD_L.find(position[0]) * SQ, COORD_N.find(position[1]) * SQ,
+                                   SQ, 1, nsg.get_color(0, 0, 0), 0.05 * SQ))
+    nsg.print_all()
+
+
+def highlight_last_move_pos(start, finish):
+    if len(start) == 2 and start[0] in COORD_L and start[1] in COORD_N:
+        nsg.add_super_tmp(nsg.Grid(COORD_L.find(start[0]) * SQ, COORD_N.find(start[1]) * SQ,
+                                   SQ, 1, nsg.get_color(0, 255, 0), 0.05*SQ))
+    if len(finish) == 2 and finish[0] in COORD_L and finish[1] in COORD_N:
+        nsg.add_super_tmp(nsg.Grid(COORD_L.find(finish[0]) * SQ, COORD_N.find(finish[1]) * SQ,
+                                   SQ, 1, nsg.get_color(255, 0, 0), 0.05*SQ))
     nsg.print_all()
 
 
