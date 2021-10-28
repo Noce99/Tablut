@@ -1,6 +1,8 @@
+import min_max
 import player
 import sys
 import time
+import numpy as np
 import visualizer as vis
 from visualizer import COORD_L
 from visualizer import COORD_N
@@ -125,8 +127,8 @@ class Game:
         if self.color_playing == "W":
             if self.white_player == "random":
                 move = random_player.get_white_random_move(self.W.soldiers, self.W.moves, self.W.king_moves)
-            elif self.white_player == "nuovaCPU":
-                move = None
+            elif self.white_player == "min_max":
+                move = min_max.min_max_player(self.get_state_as_matrix(), "W")
             else:
                 move = random_player.get_white_random_move(self.W.soldiers, self.W.moves, self.W.king_moves)
             last_king_move = self.W.king
@@ -151,8 +153,8 @@ class Game:
         else:
             if self.black_player == "random":
                 move = random_player.get_black_random_move(self.B.soldiers, self.B.moves)
-            elif self.black_player == "otherCPU":
-                move = None
+            elif self.black_player == "min_max":
+                move = min_max.min_max_player(self.get_state_as_matrix(), "B")
             else:
                 move = random_player.get_black_random_move(self.B.soldiers, self.B.moves)
             index = self.B.soldiers.index(move[0])
@@ -173,7 +175,7 @@ class Game:
             self.non_human_move()
 
     def check_things(self, last_move_start, last_move_arrive, last_move_color):
-        if self.W.king in BLUE:
+        if self.W.king in BLUE or len(self.B.soldiers) == 0:
             print("White WON!")
             if self.server:
                 self.s_white.recv(8192)
@@ -199,6 +201,14 @@ class Game:
                             vis.destroy_everything()
                         else:
                             sys.exit(0)
+        if len(self.B.soldiers) == 0:
+            print("White WON!")
+            if self.server:
+                self.s_white.recv(8192)
+            if self.visualize:
+                vis.destroy_everything()
+            else:
+                sys.exit(0)
         if self.visualize:
             vis.highlight_clear()
             vis.highlight_last_move_pos(last_move_start, last_move_arrive)
@@ -265,6 +275,23 @@ class Game:
         else:
             return False
 
+    # Return a numpy 9x9 matrix of the actual state of the game
+    # 0 -> Empty cell
+    # 1 -> White Soldiers
+    # 2 -> Black Soldiers
+    # 3 -> White King
+    def get_state_as_matrix(self):
+        status = np.array([[0]*9]*9, dtype=np.dtype('uint8'))
+        king_pos = player.Player.pos_in_numbers_from_string(self.W.king)
+        white_pos = [player.Player.pos_in_numbers_from_string(e) for e in self.W.soldiers]
+        black_pos = [player.Player.pos_in_numbers_from_string(e) for e in self.B.soldiers]
+        status[king_pos[0]][king_pos[1]] = 3
+        for e in white_pos:
+            status[e[0]][e[1]] = 1
+        for e in black_pos:
+            status[e[0]][e[1]] = 2
+        return status
+
     @staticmethod
     def send_to_server(socket_color, message, wait_response=True):
         # print("Invio: "+message)
@@ -276,7 +303,7 @@ class Game:
             socket_color.recv(8192)
 
 
-G = Game(visualize=True, white_player="human", black_player="human", server=False)
+G = Game(visualize=True, white_player="human", black_player="min_max", server=False)
 G.start_game()
 # G.W.find_possible_moves(G.B.soldiers)
 # G.B.find_possible_moves(G.W.soldiers+[G.W.king])

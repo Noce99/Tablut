@@ -13,21 +13,21 @@ class Player:
     @staticmethod
     def get_up(pos):
         if pos[1] != "1":
-            return pos[0]+str(int(pos[1])-1)
+            return pos[0] + str(int(pos[1]) - 1)
         else:
             return None
 
     @staticmethod
     def get_down(pos):
         if pos[1] != "9":
-            return pos[0]+str(int(pos[1])+1)
+            return pos[0] + str(int(pos[1]) + 1)
         else:
             return None
 
     @staticmethod
     def get_right(pos):
         if pos[0] != "I":
-            return LETTERS[LETTERS.find(pos[0])+1]+pos[1]
+            return LETTERS[LETTERS.find(pos[0]) + 1] + pos[1]
         else:
             return None
 
@@ -41,6 +41,10 @@ class Player:
     @staticmethod
     def get_around(pos):
         return [Player.get_up(pos), Player.get_right(pos), Player.get_down(pos), Player.get_left(pos)]
+
+    @staticmethod
+    def pos_in_numbers_from_string(pos: str):
+        return LETTERS.index(pos[0]), NUMBERS.index(pos[1])
 
 
 class WPlayer(Player):
