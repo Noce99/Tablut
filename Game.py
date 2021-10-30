@@ -118,7 +118,7 @@ class Game:
         if self.visualize:
             self.print_all()
         self.color_playing = "W"
-        if self.white_player == "random":
+        if self.white_player == "random" or self.white_player == "min_max":
             self.non_human_move()
         vis.loop()
 
@@ -128,7 +128,7 @@ class Game:
             if self.white_player == "random":
                 move = random_player.get_white_random_move(self.W.soldiers, self.W.moves, self.W.king_moves)
             elif self.white_player == "min_max":
-                move = min_max.min_max_player(self.get_state_as_matrix(), "W")
+                move = min_max.min_max_player(self.get_state_as_matrix(), self.W)
             else:
                 move = random_player.get_white_random_move(self.W.soldiers, self.W.moves, self.W.king_moves)
             last_king_move = self.W.king
@@ -137,16 +137,17 @@ class Game:
             else:
                 index = self.W.soldiers.index(move[1])
                 self.W.soldiers[index] = move[2]
-            print("Mossa bianco: {}".format(move))
-            if self.server:
-                if move[0] == "S":
+            # print("Mossa bianco: {}".format(move))
+            if move[0] == "S":
+                if self.server:
                     self.send_to_server(self.s_white, '{"from":"' + move[1].lower() + '","to":"' + move[2].lower() +
                                         '","turn":"WHITE"}')
-                    self.check_things(move[1], move[2], "W")
-                else:
+                self.check_things(move[1], move[2], "W")
+            else:
+                if self.server:
                     self.send_to_server(self.s_white, '{"from":"' + last_king_move.lower() + '","to":"' +
                                         move[2].lower() + '","turn":"WHITE"}')
-                    self.check_things(last_king_move, move[2], "W")
+                self.check_things(last_king_move, move[2], "W")
             self.color_playing = "B"
             if self.black_player != "human":
                 again_non_human = True
@@ -154,7 +155,7 @@ class Game:
             if self.black_player == "random":
                 move = random_player.get_black_random_move(self.B.soldiers, self.B.moves)
             elif self.black_player == "min_max":
-                move = min_max.min_max_player(self.get_state_as_matrix(), "B")
+                move = min_max.min_max_player(self.get_state_as_matrix(), self.B)
             else:
                 move = random_player.get_black_random_move(self.B.soldiers, self.B.moves)
             index = self.B.soldiers.index(move[0])
@@ -281,15 +282,15 @@ class Game:
     # 2 -> Black Soldiers
     # 3 -> White King
     def get_state_as_matrix(self):
-        status = np.array([[0]*9]*9, dtype=np.dtype('uint8'))
+        status = np.zeros((9, 9), dtype=np.dtype('uint8'))
         king_pos = player.Player.pos_in_numbers_from_string(self.W.king)
         white_pos = [player.Player.pos_in_numbers_from_string(e) for e in self.W.soldiers]
         black_pos = [player.Player.pos_in_numbers_from_string(e) for e in self.B.soldiers]
-        status[king_pos[0]][king_pos[1]] = 3
+        status[king_pos[1], king_pos[0]] = 3
         for e in white_pos:
-            status[e[0]][e[1]] = 1
+            status[e[1], e[0]] = 1
         for e in black_pos:
-            status[e[0]][e[1]] = 2
+            status[e[1], e[0]] = 2
         return status
 
     @staticmethod
@@ -303,7 +304,7 @@ class Game:
             socket_color.recv(8192)
 
 
-G = Game(visualize=True, white_player="human", black_player="min_max", server=False)
+G = Game(visualize=True, white_player="min_max", black_player="min_max", server=False)
 G.start_game()
 # G.W.find_possible_moves(G.B.soldiers)
 # G.B.find_possible_moves(G.W.soldiers+[G.W.king])
