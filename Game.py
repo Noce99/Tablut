@@ -304,7 +304,7 @@ class Game:
             socket_color.recv(8192)
 
 
-G = Game(visualize=True, white_player="min_max", black_player="min_max", server=False)
+G = Game(visualize=True, white_player="min_max", black_player="human", server=False)
 G.start_game()
 # G.W.find_possible_moves(G.B.soldiers)
 # G.B.find_possible_moves(G.W.soldiers+[G.W.king])
