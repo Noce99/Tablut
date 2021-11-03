@@ -1,6 +1,6 @@
 import nut_simple_graphics as nsg
 
-SQ = 100  # SIZE OF A SQUARE
+SQ = 80  # SIZE OF A SQUARE
 COLOR_MAP = ("011222110",
              "100020001",
              "100000001",

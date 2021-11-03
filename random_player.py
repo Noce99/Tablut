@@ -1,5 +1,7 @@
 import random
-
+'''
+def get_move(soldiers, moves):
+'''
 
 def get_black_random_move(soldiers, moves):
     while True:

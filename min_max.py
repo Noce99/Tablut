@@ -86,6 +86,30 @@ def min_max_player_2(state: np.array, pl: Union[player.WPlayer, player.BPlayer])
     # --------------------------------------------------------------------------------------------------------
     return get_move_from_matrix(next_state, state)
 
+'''
+def minimax(state: np.array, depth, alpha, beta, pl: Union[player.WPlayer, player.BPlayer], maximizingPlayer):
+    if depth == 0:
+        return heuristic(state, pl)
+
+    next_states = find_all_possible_states(state, pl)
+    if maximizingPlayer:
+        maxEval = -99999
+        for s in next_states:
+            eval = minimax(s, depth-1, alpha, beta, ..., False)
+            maxEval = max(maxEval, eval)
+            alpha = max(alpha, eval)
+        return maxEval
+
+    else:
+        minEval = +99999
+        for s in next_states:
+            eval = minimax(s, depth-1, alpha, beta, ..., True)
+            minEval = min(minEval, eval)
+        return minEval
+
+def heuristic(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
+    pass
+'''
 
 def min_max_player(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
     # Implementare di seguito la vera funzione min_max che ritorni next_state invece di calcolarlo casualmente
@@ -112,6 +136,7 @@ def find_all_possible_states(state: np.array, pl: Union[player.WPlayer, player.B
     if isinstance(pl, player.WPlayer):
         for m in pl.king_moves:
             next_states.append(get_matrix_from_moves(copy.deepcopy(state), (pl.king, m)))
+
     return next_states
 
 
@@ -124,6 +149,9 @@ def find_all_possible_states_2(state: np.array, white: bool) -> list:
     """
     L = []
     if white:
+        ai = np.where(state == 3)[0][0]
+        aj = np.where(state == 3)[1][0]
+        L += get_moves_for_peaces(state, ai, aj)
         ai, aj = np.where(state == 1)
         for k in range(len(ai)):
             L += get_moves_for_peaces(state, ai[k], aj[k])
@@ -131,7 +159,6 @@ def find_all_possible_states_2(state: np.array, white: bool) -> list:
         ai, aj = np.where(state == 2)
         for k in range(len(ai)):
             L += get_moves_for_peaces(state, ai[k], aj[k])
-    # Aggiungi il re conglione!
     return L
 
 
@@ -323,12 +350,14 @@ def get_if_state_is_a_finish_game_state(state: np.array) -> bool:
     pass
 
 
-def state_evaluation(state: np.array) -> int:
+def state_evaluation(state: np.array, depht) -> int:
     if color[np.where(state == 3)] == 2:
         return 100
     tot = 0
-    tot += np.sum(np.where(state == 1, 1, 0)) + 1
-    tot += np.sum(np.where(state == 2, -1, 0))
+    tot += np.sum(np.where(state == 1, 1, 0))*8 + 1 * 100
+    # forse il re va messo a di più (messo)
+    # aggiungere robo di depth
+    tot += np.sum(np.where(state == 2, -1, 0))*4
     return tot
 
 
@@ -348,7 +377,7 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
     :return: evaluation of the position
     """
     if depth == 0 or get_if_state_is_a_finish_game_state(node.state):
-        node.value = state_evaluation(node.state)
+        node.value = state_evaluation(node.state, depth)
         return node
 
     if maximize:
@@ -356,6 +385,9 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
         for e in node.child:
             evaluation = min_max(e, depth - 1, alpha, beta, False)
             maxEval = max(maxEval, evaluation)
+            if evaluation.value >= beta:
+                break
+            alpha = max(alpha, evaluation.value)
         if depth != MAX_DEPH:
             maxEval.parent.value = maxEval.value
             return maxEval.parent
@@ -365,6 +397,9 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
         for e in node.child:
             evaluation = min_max(e, depth - 1, alpha, beta, True)
             minEval = min(minEval, evaluation)
+            if evaluation.value <= alpha:
+                break
+            beta = min(beta, evaluation.value)
         if depth != MAX_DEPH:
             minEval.parent.value = minEval.value
             return minEval.parent
