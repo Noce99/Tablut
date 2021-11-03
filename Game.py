@@ -13,6 +13,7 @@ from visualizer import CROWN
 from visualizer import SQ
 import random_player
 import socket
+from numba import jit
 
 
 # Aren: Significa “colui che regna come un’aquila”

@@ -3,6 +3,7 @@ from typing import Union
 import numpy as np
 import random
 import copy
+from numba import jit
 
 MAX_DEPH = 3
 
@@ -140,6 +141,7 @@ def find_all_possible_states(state: np.array, pl: Union[player.WPlayer, player.B
     return next_states
 
 
+
 def find_all_possible_states_2(state: np.array, white: bool) -> list:
     """
     Find all possible move from a state
@@ -214,7 +216,7 @@ def check_move(state: np.array, start: tuple, end: tuple):
             return False
     return True
 
-
+@jit(nopython=True)
 def get_new_state(state: np.array, start: tuple, end: tuple):
     new_state = state.copy()
     i, j = start
@@ -252,7 +254,7 @@ def get_new_state(state: np.array, start: tuple, end: tuple):
                 new_state[e] = 0
     return new_state
 
-
+@jit(nopython=True)
 def get_around(pos: tuple):
     to_check = []
     ii, jj = pos
@@ -274,7 +276,7 @@ def get_around(pos: tuple):
         to_check.append((-1, -1))
     return to_check
 
-
+@jit(nopython=True)
 def check_if_killer(state: np.array, pos: tuple, vittima: tuple):
     if pos == (-1, -1):
         return False
