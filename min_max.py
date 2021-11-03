@@ -361,7 +361,7 @@ def state_evaluation(state: np.array, depth) -> int:
     # forse il re va messo a di più (messo)
     # aggiungere robo di depth
     tot += np.sum(np.where(state == 2, -1, 0))*4
-    return tot - 3 + depth
+    return tot
 
 
 def random_evaluation(states_list: np.array, color: str) -> np.array:
