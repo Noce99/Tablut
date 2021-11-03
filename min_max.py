@@ -150,8 +150,9 @@ def find_all_possible_states_2(state: np.array, white: bool) -> list:
     """
     L = []
     if white:
-        ai = np.where(state == 3)[0][0]
-        aj = np.where(state == 3)[1][0]
+        if np.sum(state == 3) == 1:
+            ai = np.where(state == 3)[0][0]
+            aj = np.where(state == 3)[1][0]
         L.extend(get_moves_for_peaces(state, ai, aj))
         ai, aj = np.where(state == 1)
         for k in range(len(ai)):
