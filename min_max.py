@@ -4,7 +4,7 @@ import numpy as np
 import random
 import copy
 from numba import jit
-
+from numba.typed import List
 MAX_DEPH = 3
 
 coordinates = np.array([['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'],
@@ -140,8 +140,7 @@ def find_all_possible_states(state: np.array, pl: Union[player.WPlayer, player.B
 
     return next_states
 
-
-
+@jit(nopython=True)
 def find_all_possible_states_2(state: np.array, white: bool) -> list:
     """
     Find all possible move from a state
@@ -153,17 +152,17 @@ def find_all_possible_states_2(state: np.array, white: bool) -> list:
     if white:
         ai = np.where(state == 3)[0][0]
         aj = np.where(state == 3)[1][0]
-        L += get_moves_for_peaces(state, ai, aj)
+        L.extend(get_moves_for_peaces(state, ai, aj))
         ai, aj = np.where(state == 1)
         for k in range(len(ai)):
-            L += get_moves_for_peaces(state, ai[k], aj[k])
+            L.extend(get_moves_for_peaces(state, ai[k], aj[k]))
     else:
         ai, aj = np.where(state == 2)
         for k in range(len(ai)):
-            L += get_moves_for_peaces(state, ai[k], aj[k])
+            L.extend(get_moves_for_peaces(state, ai[k], aj[k]))
     return L
 
-
+@jit(nopython=True)
 def get_moves_for_peaces(state: np.array, i: int, j: int) -> list:
     """
 
@@ -199,7 +198,7 @@ def get_moves_for_peaces(state: np.array, i: int, j: int) -> list:
             break
     return L
 
-
+@jit(nopython=True)
 def check_move(state: np.array, start: tuple, end: tuple):
     white = state[start] == 1
     if state[end] != 0:
