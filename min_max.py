@@ -4,7 +4,8 @@ import numpy as np
 import random
 import copy
 from numba import jit
-from numba.typed import List
+# from numba.typed import List
+
 MAX_DEPH = 3
 
 coordinates = np.array([['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'],
@@ -23,9 +24,9 @@ coordinates = np.array([['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'],
 color = np.array([[0, 2, 2, 5, 5, 5, 2, 2, 0],
                   [2, 0, 0, 0, 5, 0, 0, 0, 2],
                   [2, 0, 0, 0, 0, 0, 0, 0, 2],
-                  [6, 0, 0, 4, 4, 4, 0, 0, 8],
+                  [6, 0, 0, 0, 4, 0, 0, 0, 8],
                   [6, 6, 0, 4, 3, 4, 0, 8, 8],
-                  [6, 0, 0, 4, 4, 4, 0, 0, 8],
+                  [6, 0, 0, 0, 4, 0, 0, 0, 8],
                   [2, 0, 0, 0, 0, 0, 0, 0, 2],
                   [2, 0, 0, 0, 7, 0, 0, 0, 2],
                   [0, 2, 2, 7, 7, 7, 2, 2, 0]], dtype=np.dtype('uint8'))
@@ -40,6 +41,7 @@ class Node:
         self.state = state
         self.child = []
         self.value = None
+        self.value_depth = None
         self.parent = parent
         self.start = start
         self.end = end
@@ -62,6 +64,14 @@ class Node:
             raise NodeNotEvaluatedError
         return self.value < other.value
 
+    def __str__(self):
+        return "Valore: " + str(self.value) + " (" + str(self.start) + " to " + str(self.end) + ") " + " (depth = " +\
+               str(self.value_depth) + ")"
+
+    def __repr__(self):
+        return "Valore: " + str(self.value) + " (" + str(self.start) + " to " + str(self.end) + ") " + " (depth = " + \
+                str(self.value_depth) + ")"
+
 
 more_pessimistic_node_for_white = Node(np.zeros((9, 9)), True, 0)
 more_pessimistic_node_for_white.value = -1000
@@ -81,36 +91,12 @@ def min_max_player_2(state: np.array, pl: Union[player.WPlayer, player.BPlayer])
     # Implementare di seguito la vera funzione min_max che ritorni next_state invece di calcolarlo casualmente
     print(state)
     if isinstance(pl, player.WPlayer):
-        next_state = random_evaluation(next_states, "W")
+        next_state = random_evaluation(next_states)
     else:
-        next_state = random_evaluation(next_states, "B")
+        next_state = random_evaluation(next_states)
     # --------------------------------------------------------------------------------------------------------
     return get_move_from_matrix(next_state, state)
 
-'''
-def minimax(state: np.array, depth, alpha, beta, pl: Union[player.WPlayer, player.BPlayer], maximizingPlayer):
-    if depth == 0:
-        return heuristic(state, pl)
-
-    next_states = find_all_possible_states(state, pl)
-    if maximizingPlayer:
-        maxEval = -99999
-        for s in next_states:
-            eval = minimax(s, depth-1, alpha, beta, ..., False)
-            maxEval = max(maxEval, eval)
-            alpha = max(alpha, eval)
-        return maxEval
-
-    else:
-        minEval = +99999
-        for s in next_states:
-            eval = minimax(s, depth-1, alpha, beta, ..., True)
-            minEval = min(minEval, eval)
-        return minEval
-
-def heuristic(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
-    pass
-'''
 
 def min_max_player(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
     # Implementare di seguito la vera funzione min_max che ritorni next_state invece di calcolarlo casualmente
@@ -119,13 +105,29 @@ def min_max_player(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
         # next_state = random_evaluation(next_states, "W")
         N = Node(state, True, MAX_DEPH)
         next_state = min_max(N, MAX_DEPH, -1000, 1000, True)
+        possible_move = []
+        for n in N.child:
+            possible_move.append(n)
+        possible_move.sort(reverse=True)
+        i = 0
+        for i, n in enumerate(possible_move):
+            if color[state == 3] == 2:
+                return get_move_from_matrix_2(n.state, n.start, n.end)
+            if n.value != possible_move[0].value:
+                break
+        bests_move = possible_move[:i]
+        next_state = bests_move[random.randrange(0, len(bests_move))]
         print("Value:", next_state.value)
         print("State:", next_state.state)
     else:
         next_states = find_all_possible_states_2(state, False)
-        next_state = random_evaluation(next_states, "B")
+        next_state = random_evaluation(next_states)
     # --------------------------------------------------------------------------------------------------------
     return get_move_from_matrix_2(next_state.state, next_state.start, next_state.end)
+
+
+def get_value_depth(move: Node):
+    return move.value_depth
 
 
 def find_all_possible_states(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
@@ -140,6 +142,7 @@ def find_all_possible_states(state: np.array, pl: Union[player.WPlayer, player.B
 
     return next_states
 
+
 @jit(nopython=True)
 def find_all_possible_states_2(state: np.array, white: bool) -> list:
     """
@@ -153,7 +156,7 @@ def find_all_possible_states_2(state: np.array, white: bool) -> list:
         if np.sum(state == 3) == 1:
             ai = np.where(state == 3)[0][0]
             aj = np.where(state == 3)[1][0]
-        L.extend(get_moves_for_peaces(state, ai, aj))
+            L.extend(get_moves_for_peaces(state, ai, aj))
         ai, aj = np.where(state == 1)
         for k in range(len(ai)):
             L.extend(get_moves_for_peaces(state, ai[k], aj[k]))
@@ -162,6 +165,7 @@ def find_all_possible_states_2(state: np.array, white: bool) -> list:
         for k in range(len(ai)):
             L.extend(get_moves_for_peaces(state, ai[k], aj[k]))
     return L
+
 
 @jit(nopython=True)
 def get_moves_for_peaces(state: np.array, i: int, j: int) -> list:
@@ -199,6 +203,7 @@ def get_moves_for_peaces(state: np.array, i: int, j: int) -> list:
             break
     return L
 
+
 @jit(nopython=True)
 def check_move(state: np.array, start: tuple, end: tuple):
     white = state[start] == 1
@@ -216,6 +221,7 @@ def check_move(state: np.array, start: tuple, end: tuple):
             return False
     return True
 
+
 @jit(nopython=True)
 def get_new_state(state: np.array, start: tuple, end: tuple):
     new_state = state.copy()
@@ -223,36 +229,31 @@ def get_new_state(state: np.array, start: tuple, end: tuple):
     ii, jj = end
     new_state[ii, jj] = new_state[i, j]
     new_state[i, j] = 0
-    # if np.all(new_state == interesting_state):
-    #    print("So!")
     to_check = get_around(end)
     for e in to_check:
         around = get_around(e)
-        opposit_1 = [around[0], around[2]]
-        opposit_2 = [around[1], around[3]]
-        if state[e] == 3:
-            if color[e] == 3:
-                if check_if_killer(state, around[0], e) and check_if_killer(state, around[2], e) and \
-                        check_if_killer(state, around[1], e) and check_if_killer(state, around[3], e):
+        opposites_1 = [around[0], around[2]]
+        opposites_2 = [around[1], around[3]]
+        if new_state[e] == 3 and new_state[ii, jj] == 2:
+            if color[e] in [3, 4]:
+                if check_if_killer(new_state, around[0], e) and check_if_killer(new_state, around[2], e) and \
+                        check_if_killer(new_state, around[1], e) and check_if_killer(new_state, around[3], e):
                     new_state[e] = 0
-            elif color[e] == 4:
-                num = 0
-                for ee in around:
-                    if check_if_killer(state, ee, e):
-                        num += 1
-                if num >= 3:
-                    new_state[e] = 0
-            # .......................................................................
-            # Da aggiungere re non in corona o al centro
-            # .......................................................................
-        else:
-            if end in opposit_1 and check_if_killer(new_state, around[0], e) and check_if_killer(new_state, around[2],
-                                                                                                 e):
+            elif end in opposites_1 and check_if_killer(new_state, around[0], e) and check_if_killer(new_state,
+                                                                                                   around[2], e):
                 new_state[e] = 0
-            elif end in opposit_2 and check_if_killer(new_state, around[1], e) and check_if_killer(new_state, around[3],
-                                                                                                   e):
+            elif end in opposites_2 and check_if_killer(new_state, around[1], e) and check_if_killer(new_state,
+                                                                                                     around[3], e):
+                new_state[e] = 0
+        else:
+            if end in opposites_1 and check_if_killer(new_state, around[0], e) and check_if_killer(new_state,
+                                                                                                   around[2], e):
+                new_state[e] = 0
+            elif end in opposites_2 and check_if_killer(new_state, around[1], e) and check_if_killer(new_state,
+                                                                                                     around[3], e):
                 new_state[e] = 0
     return new_state
+
 
 @jit(nopython=True)
 def get_around(pos: tuple):
@@ -276,14 +277,23 @@ def get_around(pos: tuple):
         to_check.append((-1, -1))
     return to_check
 
+
 @jit(nopython=True)
 def check_if_killer(state: np.array, pos: tuple, vittima: tuple):
     if pos == (-1, -1):
         return False
-    if state[pos] != state[vittima] and state[pos] != 0:
-        return True
+    if state[vittima] == 0:
+        return False
     if color[pos] in [5, 6, 7, 8, 3] and color[vittima] not in [5, 6, 7, 8, 3]:
         return True
+    if state[pos] == 0:
+        return False
+    if state[vittima] == 2:
+        if state[pos] in [1, 3]:
+            return True
+    else:
+        if state[pos] == 2:
+            return True
     return False
 
 
@@ -355,18 +365,17 @@ def get_if_state_is_a_finish_game_state(state: np.array) -> bool:
         return True
     return False
 
-def state_evaluation(state: np.array, depth) -> int:
+
+def state_evaluation(state: np.array) -> int:
     tot = 0
-    tot += np.sum(np.where(state == 1, 1, 0))*8 + (1 - np.sum(state == 3)) * (-100)
-    # forse il re va messo a di più (messo)
-    # aggiungere robo di depth
-    tot += np.sum(np.where(state == 2, -1, 0))*4
+    tot += np.sum(np.where(state == 1, 1, 0))*15 + (1 - np.sum(state == 3)) * (-1000)
+    tot += np.sum(np.where(state == 2, -1, 0))*10
     if color[np.where(state == 3)] == 2:
-        tot += 100
+        tot += 1000
     return tot
 
 
-def random_evaluation(states_list: np.array, color: str) -> np.array:
+def random_evaluation(states_list: np.array) -> np.array:
     selected_state = states_list[random.randrange(0, len(states_list))]
     return selected_state
 
@@ -382,7 +391,8 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
     :return: evaluation of the position
     """
     if depth == 0 or get_if_state_is_a_finish_game_state(node.state):
-        node.value = state_evaluation(node.state, depth)
+        node.value = state_evaluation(node.state)
+        node.value_depth = depth
         return node
 
     if maximize:
@@ -391,10 +401,12 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
             evaluation = min_max(e, depth - 1, alpha, beta, False)
             maxEval = max(maxEval, evaluation)
             if evaluation.value >= beta:
-                break
+                #break
+                pass
             alpha = max(alpha, evaluation.value)
         if depth != MAX_DEPH:
             maxEval.parent.value = maxEval.value
+            maxEval.parent.value_depth = maxEval.value_depth
             return maxEval.parent
         return maxEval
     else:
@@ -403,10 +415,12 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
             evaluation = min_max(e, depth - 1, alpha, beta, True)
             minEval = min(minEval, evaluation)
             if evaluation.value <= alpha:
-                break
+                #break
+                pass
             beta = min(beta, evaluation.value)
         if depth != MAX_DEPH:
             minEval.parent.value = minEval.value
+            minEval.parent.value_depth = minEval.value_depth
             return minEval.parent
         return minEval
 
@@ -423,8 +437,17 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
 # particular_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
 #                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
 #                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
-#                              [0, 2, 0, 0, 1, 0, 0, 0, 2],
-#                              [2, 2, 1, 1, 3, 1, 1, 2, 2],
+#                              [2, 0, 0, 0, 0, 0, 0, 3, 2],
+#                              [2, 2, 1, 1, 0, 1, 1, 2, 2],
+#                              [2, 0, 0, 0, 1, 0, 0, 0, 2],
+#                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
+#                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
+#                              [0, 0, 0, 2, 2, 2, 0, 0, 0]])
+# particular_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
+#                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+#                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
+#                              [2, 0, 0, 0, 3, 0, 0, 0, 2],
+#                              [2, 2, 1, 1, 0, 1, 1, 2, 2],
 #                              [2, 0, 0, 0, 1, 0, 0, 0, 2],
 #                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
 #                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
@@ -509,3 +532,5 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
 # get_moves_for_peaces(initial_state, 0, 5)
 
 # print(get_new_state(particular_state, (4, 2), (3, 2)))
+
+# get_new_state(particular_state, (0, 4), (2, 4))
