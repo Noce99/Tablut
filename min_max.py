@@ -351,16 +351,18 @@ def min_max_evaluation(states_list: np.array, color: str) -> np.array:
 def get_if_state_is_a_finish_game_state(state: np.array) -> bool:
     if np.sum(state == 3) == 0:
         return True
+    if color[np.where(state == 3)] == 2:
+        return True
     return False
 
 def state_evaluation(state: np.array, depth) -> int:
-    if color[np.where(state == 3)] == 2:
-        return 100
     tot = 0
-    tot += np.sum(np.where(state == 1, 1, 0))*8 + 1 * 100
+    tot += np.sum(np.where(state == 1, 1, 0))*8 + (1 - np.sum(state == 3)) * (-100)
     # forse il re va messo a di più (messo)
     # aggiungere robo di depth
     tot += np.sum(np.where(state == 2, -1, 0))*4
+    if color[np.where(state == 3)] == 2:
+        tot += 100
     return tot
 
 
