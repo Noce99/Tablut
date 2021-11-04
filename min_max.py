@@ -30,8 +30,6 @@ color = np.array([[0, 2, 2, 5, 5, 5, 2, 2, 0],
                   [2, 0, 0, 0, 7, 0, 0, 0, 2],
                   [0, 2, 2, 7, 7, 7, 2, 2, 0]], dtype=np.dtype('uint8'))
 
-win_pos = [(0, 1), (0, 2), (0, 6), (0, 7), (8, 1), (8, 6), (8, 7),
-           (1, 0), (2, 0), (6, 0), (7, 0), (1, 8), (6, 8), (7, 8)]
 
 class NodeNotEvaluatedError(Exception):
     pass
@@ -353,21 +351,17 @@ def min_max_evaluation(states_list: np.array, color: str) -> np.array:
 def get_if_state_is_a_finish_game_state(state: np.array) -> bool:
     if np.sum(state == 3) == 0:
         return True
-    ai = np.where(state == 3)[0][0]
-    aj = np.where(state == 3)[1][0]
-    for (ai, aj) in win_pos:
-        return True
     return False
 
 def state_evaluation(state: np.array, depth) -> int:
+    if color[np.where(state == 3)] == 2:
+        return 100
     tot = 0
-    tot += np.sum(np.where(state == 1, 1, 0))*8 + (1 - np.sum(state == 3)) * (-100)
+    tot += np.sum(np.where(state == 1, 1, 0))*8 + 1 * 100
     # forse il re va messo a di più (messo)
     # aggiungere robo di depth
     tot += np.sum(np.where(state == 2, -1, 0))*4
-    if color[np.where(state == 3)] == 2:
-        tot += 100
-    return tot - 3 + depth
+    return tot
 
 
 def random_evaluation(states_list: np.array, color: str) -> np.array:
