@@ -1,7 +1,6 @@
 import player
 from typing import Union
 import numpy as np
-# import random
 # import copy
 from time import time
 
@@ -97,7 +96,8 @@ def min_max_player(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
         next_state, value = min_max((state, None, None), MAX_DEPH, MAX_DEPH, -10000, 10000, True)
         print("Best Value:", value)
     else:
-        pass
+        next_state, value = min_max((state, None, None), MAX_DEPH, MAX_DEPH, -10000, 10000, False)
+        print("Best Value:", value)
     # --------------------------------------------------------------------------------------------------------
     return get_move_from_matrix(next_state)
 
@@ -160,19 +160,23 @@ def find_all_possible_children(board: np.array, white: bool) -> list:
     :return: a list of all the possibile states
     """
     if white:
-        if np.sum(board == 3) == 1:
-            ai = np.where(board == 3)[0][0]
-            aj = np.where(board == 3)[1][0]
-            for move in get_moves_for_peaces((board, (ai, aj), None)):
-                yield move
         ai, aj = np.where(board == 1)
+        if np.sum(board == 3) == 1:
+            ai = np.append(ai, np.where(board == 3)[0][0])
+            aj = np.append(aj, np.where(board == 3)[1][0])
+        aa = np.stack((ai, aj), axis=0)
+        aa = np.rot90(aa)
+        np.random.shuffle(aa)
         for k in range(len(ai)):
-            for move in get_moves_for_peaces((board, (ai[k], aj[k]), None)):
+            for move in get_moves_for_peaces((board, (aa[k, 0], aa[k, 1]), None)):
                 yield move
     else:
         ai, aj = np.where(board == 2)
+        aa = np.stack((ai, aj), axis=0)
+        aa = np.rot90(aa)
+        np.random.shuffle(aa)
         for k in range(len(ai)):
-            for move in get_moves_for_peaces((board, (ai[k], aj[k]), None)):
+            for move in get_moves_for_peaces((board, (aa[k, 0], aa[k, 1]), None)):
                 yield move
 
 
