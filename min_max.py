@@ -4,7 +4,6 @@ import numpy as np
 import random
 import copy
 from numba import jit
-# from numba.typed import List
 
 MAX_DEPH = 3
 
@@ -42,6 +41,7 @@ class Node:
         self.child = []
         self.value = None
         self.value_depth = None
+        self.pruned = False
         self.parent = parent
         self.start = start
         self.end = end
@@ -52,16 +52,20 @@ class Node:
     def __eq__(self, other):
         if self.value is None or other.value is None:
             raise NodeNotEvaluatedError
-        return self.value == other.value
+        return self.value == other.value and self.pruned == other.pruned
 
     def __gt__(self, other):
         if self.value is None or other.value is None:
             raise NodeNotEvaluatedError
+        if self.value == other.value:
+            return other.pruned
         return self.value > other.value
 
     def __lt__(self, other):
         if self.value is None or other.value is None:
             raise NodeNotEvaluatedError
+        if self.value == other.value and self.pruned != other.pruned:
+            return self.pruned
         return self.value < other.value
 
     def __str__(self):
@@ -74,49 +78,37 @@ class Node:
 
 
 more_pessimistic_node_for_white = Node(np.zeros((9, 9)), True, 0)
-more_pessimistic_node_for_white.value = -1000
+more_pessimistic_node_for_white.value = -5000
 more_pessimistic_node_for_black = Node(np.zeros((9, 9)), True, 0)
-more_pessimistic_node_for_black.value = 1000
-
-
-# state -> matrice 9x9 con lo stato della partita
-# player -> instance of Player (self.B or self.W where self is Game)
-
-# return move
-#   black move -> random_soldier, None, random_move
-#   king move  -> return "K", None, random_move
-#   white move -> return "S", random_soldier, random_move
-def min_max_player_2(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
-    next_states = find_all_possible_states(state, pl)
-    # Implementare di seguito la vera funzione min_max che ritorni next_state invece di calcolarlo casualmente
-    print(state)
-    if isinstance(pl, player.WPlayer):
-        next_state = random_evaluation(next_states)
-    else:
-        next_state = random_evaluation(next_states)
-    # --------------------------------------------------------------------------------------------------------
-    return get_move_from_matrix(next_state, state)
+more_pessimistic_node_for_black.value = 5000
 
 
 def min_max_player(state: np.array, pl: Union[player.WPlayer, player.BPlayer]):
     # Implementare di seguito la vera funzione min_max che ritorni next_state invece di calcolarlo casualmente
+    total_num_of_pawns = np.sum(state == 1) + np.sum(state == 2)
+    global MAX_DEPH
     if isinstance(pl, player.WPlayer):
         # next_states = find_all_possible_states_2(state, True)
         # next_state = random_evaluation(next_states, "W")
+        if total_num_of_pawns < 10:
+            MAX_DEPH = 4
         N = Node(state, True, MAX_DEPH)
-        next_state = min_max(N, MAX_DEPH, -1000, 1000, True)
+        min_max(N, MAX_DEPH, -10000, 10000, True)
         possible_move = []
         for n in N.child:
             possible_move.append(n)
-        possible_move.sort(reverse=True)
-        i = 0
-        for i, n in enumerate(possible_move):
-            if color[state == 3] == 2:
-                return get_move_from_matrix_2(n.state, n.start, n.end)
-            if n.value != possible_move[0].value:
-                break
-        bests_move = possible_move[:i]
-        next_state = bests_move[random.randrange(0, len(bests_move))]
+        if len(possible_move) != 1:
+            possible_move.sort(reverse=True)
+            i = 0
+            for i, n in enumerate(possible_move):
+                if color[state == 3] == 2:
+                    return get_move_from_matrix_2(n.state, n.start, n.end)
+                if n.value != possible_move[0].value or n.pruned is True:
+                    break
+            bests_move = possible_move[:i]
+            next_state = bests_move[random.randrange(0, len(bests_move))]
+        else:
+            next_state = possible_move[0]
         print("Value:", next_state.value)
         print("State:", next_state.state)
     else:
@@ -399,30 +391,30 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
         maxEval = more_pessimistic_node_for_white
         for e in node.child:
             evaluation = min_max(e, depth - 1, alpha, beta, False)
-            maxEval = max(maxEval, evaluation)
-            if evaluation.value >= beta:
-                #break
-                pass
-            alpha = max(alpha, evaluation.value)
-        if depth != MAX_DEPH:
-            maxEval.parent.value = maxEval.value
-            maxEval.parent.value_depth = maxEval.value_depth
-            return maxEval.parent
-        return maxEval
+            if not evaluation.pruned:
+                maxEval = max(maxEval, evaluation)
+                alpha = max(alpha, evaluation.value)
+                if beta <= alpha:
+                    maxEval.pruned = True
+                    break
+        maxEval.parent.pruned = maxEval.pruned
+        maxEval.parent.value = maxEval.value
+        maxEval.parent.value_depth = maxEval.value_depth
+        return maxEval.parent
     else:
         minEval = more_pessimistic_node_for_black
         for e in node.child:
             evaluation = min_max(e, depth - 1, alpha, beta, True)
-            minEval = min(minEval, evaluation)
-            if evaluation.value <= alpha:
-                #break
-                pass
-            beta = min(beta, evaluation.value)
-        if depth != MAX_DEPH:
-            minEval.parent.value = minEval.value
-            minEval.parent.value_depth = minEval.value_depth
-            return minEval.parent
-        return minEval
+            if not evaluation.pruned:
+                minEval = min(minEval, evaluation)
+                beta = min(beta, evaluation.value)
+                if beta <= alpha:
+                    minEval.pruned = True
+                    break
+        minEval.parent.pruned = minEval.pruned
+        minEval.parent.value = minEval.value
+        minEval.parent.value_depth = minEval.value_depth
+        return minEval.parent
 
 
 # initial_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
@@ -434,24 +426,24 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
 #                           [0, 0, 0, 0, 1, 0, 0, 0, 0],
 #                           [0, 0, 0, 0, 2, 0, 0, 0, 0],
 #                           [0, 0, 0, 2, 2, 2, 0, 0, 0]])
-# particular_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
-#                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
-#                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
-#                              [2, 0, 0, 0, 0, 0, 0, 3, 2],
-#                              [2, 2, 1, 1, 0, 1, 1, 2, 2],
-#                              [2, 0, 0, 0, 1, 0, 0, 0, 2],
-#                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
-#                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
-#                              [0, 0, 0, 2, 2, 2, 0, 0, 0]])
-# particular_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
-#                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
-#                              [2, 0, 0, 0, 3, 0, 0, 0, 2],
-#                              [2, 2, 1, 1, 0, 1, 1, 2, 2],
-#                              [2, 0, 0, 0, 1, 0, 0, 0, 2],
-#                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
-#                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
-#                              [0, 0, 0, 2, 2, 2, 0, 0, 0]])
+# # particular_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
+# #                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
+# #                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
+# #                              [2, 0, 0, 0, 0, 0, 0, 3, 2],
+# #                              [2, 2, 1, 1, 0, 1, 1, 2, 2],
+# #                              [2, 0, 0, 0, 1, 0, 0, 0, 2],
+# #                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
+# #                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
+# #                              [0, 0, 0, 2, 2, 2, 0, 0, 0]])
+# # particular_state = np.array([[0, 0, 0, 2, 2, 2, 0, 0, 0],
+# #                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+# #                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
+# #                              [2, 0, 0, 0, 3, 0, 0, 0, 2],
+# #                              [2, 2, 1, 1, 0, 1, 1, 2, 2],
+# #                              [2, 0, 0, 0, 1, 0, 0, 0, 2],
+# #                              [0, 0, 0, 0, 1, 0, 0, 0, 0],
+# #                              [0, 0, 0, 0, 2, 0, 0, 0, 0],
+# #                              [0, 0, 0, 2, 2, 2, 0, 0, 0]])
 # A = np.array([[1, 1, 1, 1, 1, 1, 1, 0, 0],
 #               [2, 2, 2, 2, 2, 2, 2, 0, 0],
 #               [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -515,8 +507,7 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
 #               [0, 0, 0, 0, 0, 0, 0, 0, 0],
 #               [0, 0, 0, 0, 0, 0, 0, 0, 0],
 #               [0, 0, 0, 0, 0, 0, 0, 0, 0]])
-# N = Node(initial_state, True, MAX_DEPH)
-# N.state = A
+# N = Node(A, True, MAX_DEPH)
 # N.child[0].state = B
 # N.child[1].state = C
 # N.child[0].child[0].state = D
@@ -524,6 +515,7 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
 # N.child[1].child[0].state = F
 # N.child[1].child[1].state = G
 # next_state = min_max(N, MAX_DEPH, -1000, 1000, True)
+# print(next_state)
 # print(next_state.value)
 # print(next_state.state)
 # print("BHO!")
@@ -532,5 +524,4 @@ def min_max(node: Node, depth: int, alpha: int, beta: int, maximize: bool):
 # get_moves_for_peaces(initial_state, 0, 5)
 
 # print(get_new_state(particular_state, (4, 2), (3, 2)))
-
 # get_new_state(particular_state, (0, 4), (2, 4))
