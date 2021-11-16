@@ -62,7 +62,7 @@ vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
 int COUNTER = 0;
 
 string min_max_player(vector<vector<char>> state, bool white){
-  int MAX_DEPH = 4;
+  int MAX_DEPH = 6;
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
   int value;
   if (white){
@@ -287,7 +287,7 @@ tuple<vector<vector<char>> , vector<int>, vector<int>> get_new_state(vector<vect
   for (int k = 0; k < 4; k++){
     vector<int> e = to_check[k];
     // cout << "[" << e[0] << "; " << e[1] << "]" << endl;
-    if (e[0] != -1){
+    if (e[0] != -1 && new_state[e[0]][e[1]] != 0 && new_state[e[0]][e[1]] != new_state[end[0]][end[1]]){
       vector<vector<int>> around = get_around(e);
       vector<vector<int>> opposites_1 = {around[0], around[2]};
       vector<vector<int>> opposites_2 = {around[1], around[3]};
@@ -298,15 +298,21 @@ tuple<vector<vector<char>> , vector<int>, vector<int>> get_new_state(vector<vect
               check_if_killer(new_state, around[1], e) &&
               check_if_killer(new_state, around[3], e)){
             new_state[e[0]][e[1]] = 0;
+            // print_state(new_state);
+            // cout << "----------------" << endl;
           }
         }else if (((end[0] == opposites_1[0][0] && end[1] == opposites_1[0][1]) || (end[0] == opposites_1[1][0] && end[1] == opposites_1[1][1])) &&
                    check_if_killer(new_state, around[0], e) &&
                    check_if_killer(new_state, around[2], e)){
           new_state[e[0]][e[1]] = 0;
+          // print_state(new_state);
+          // cout << "----------------" << endl;
         }else if (((end[0] == opposites_2[0][0] && end[1] == opposites_2[0][1]) || (end[0] == opposites_2[1][0] && end[1] == opposites_2[1][1])) &&
                    check_if_killer(new_state, around[1], e) &&
                    check_if_killer(new_state, around[3], e)){
           new_state[e[0]][e[1]] = 0;
+          // print_state(new_state);
+          // cout << "----------------" << endl;
         }
       }else{
         // cout << "end: " << end[0] << " ; " << end[1] << endl;
@@ -318,8 +324,12 @@ tuple<vector<vector<char>> , vector<int>, vector<int>> get_new_state(vector<vect
         // cout << "checcko: " << around[2][0] << " ; " << around[2][1] << " -> " << check_if_killer(new_state, around[2], e) << endl;
         if (((end[0] == opposites_1[0][0] && end[1] == opposites_1[0][1]) || (end[0] == opposites_1[1][0] && end[1] == opposites_1[1][1])) && check_if_killer(new_state, around[0], e) && check_if_killer(new_state, around[2], e)){
           new_state[e[0]][e[1]] = 0;
+          // print_state(new_state);
+          // cout << "----------------" << endl;
         }else if (((end[0] == opposites_2[0][0] && end[1] == opposites_2[0][1]) || (end[0] == opposites_2[1][0] && end[1] == opposites_2[1][1])) && check_if_killer(new_state, around[1], e) && check_if_killer(new_state, around[3], e)){
           new_state[e[0]][e[1]] = 0;
+          // print_state(new_state);
+          // cout << "----------------" << endl;
         }
       }
     }
@@ -541,15 +551,12 @@ void initialize_socket(bool white){
   if ((SOCK = socket(AF_INET, SOCK_STREAM, 0)) < 0){
     printf("\n Socket creation error \n");
   }
-
   serv_addr.sin_family = AF_INET;
   if (white){
     serv_addr.sin_port = htons(PORT_WHITE);
   }else{
     serv_addr.sin_port = htons(PORT_BLACK);
   }
-
-  // Convert IPv4 and IPv6 addresses from text to binary form
   if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0){
     printf("\nInvalid address/ Address not supported \n");
   }
@@ -567,11 +574,6 @@ void initialize_socket(bool white){
   send(SOCK , name, name_lenght, 0 );
   printf("My name sent!\n");
   int ricevuti = read(SOCK , buffer, 1);
-  // char * buff = new char[4];
-  // read(SOCK , buff, 4);
-  // cout << "PRIMA RICEVUTA: " << int(buff[0]) << " " << int(buff[1]) << " " << int(buff[2]) << " " << int(buff[3]) << endl;
-  // read(SOCK , buff, 4);
-  // cout << "PRIMA RICEVUTA: " << int(buff[0]) << " " << int(buff[1]) << " " << int(buff[2]) << " " << int(buff[3]) << endl;
 }
 
 void send_to_server(string ss){
@@ -596,11 +598,6 @@ vector<vector<char>> recive_from_server(){
       break;
     }
   }
-  cout << "Dati grezzi ricevuti:" << endl;
-  for (int i = 0; i < ricevuti; i++){
-    cout << buffer[i];
-  }
-  cout << "\n+++++++++++++++++++++++" << endl;
   int interesting_finish = 673;
   vector<vector<char>> recived_status;
   recived_status.push_back(vector<char>());
@@ -648,99 +645,46 @@ vector<vector<char>> recive_from_server(){
       i++;
     }
   }
-  // cout << "Recived status:" << endl;
-  // print_state(recived_status);
-  // cout << "----------------------" << endl;
   cout << endl;
-  // int * punt_num = reinterpret_cast<int * >(buffer);
-  // cout << "Ricevuti: " << punt_num[0] << " / " << punt_num[1] << endl;
   return recived_status;
 }
 
-void recive_from_server_tutto(){
-  char * buffer = new char[1000];
-  int ricevuti = read(SOCK , buffer, 1000);
-  cout << "BUFFER:" << endl;
-  for (int i = 0; i < ricevuti; i++){
-    cout << buffer[i];
-  }
-  cout << endl;
-}
-void recive_from_server_int(){
-  unsigned char * buffer = new unsigned char[4]{0, 0, 0, 0};
-  int ricevuti = read(SOCK , buffer, 4);
-  int a = int((unsigned char)(buffer[0]) << 24 |
-            (unsigned char)(buffer[1]) << 16 |
-            (unsigned char)(buffer[2]) << 8 |
-            (unsigned char)(buffer[3]));
-  cout << "Dati che stai per ricevere: " << a << endl;
-  cout << int(buffer[0]) << "/" << int(buffer[1]) << "/" << int(buffer[2]) << "/" << int(buffer[3]) << endl;
-}
 // Tolto problema ram:
 // depth 5 -> 20 s
 // depth 6 -> 967 s
+// Reso più efficiente get_new_state
+// depth 5 -> 12 s
 
 int main(){
   bool white = true;
-  cout << "Inizio a calcolare le mosse per lo stato iniziale!" << endl;
-  initialize_socket(true);
-  usleep(100*1000);
-  recive_from_server();
-  //recive_from_server();
-  vector<vector<char>> state = initial_state;
-  string result = min_max_player(state, true) + "\"WHITE\"}";
-  send_to_server(result);
-  usleep(500*1000);
-  recive_from_server();
-  usleep(100*1000);
-  while(true){
-    vector<vector<char>> recived_status = recive_from_server();
-    cout << "RECIVED FROM SERVER" << endl;
-    print_state(recived_status);
-    cout << "+++++++++++++++++++++++++++++++++" << endl;
-    result = min_max_player(recived_status, true) + "\"WHITE\"}";
-    send_to_server(result);
+  bool server = false;
+  if (server){
+    initialize_socket(true);
     usleep(100*1000);
     recive_from_server();
+    vector<vector<char>> state = initial_state;
+    string result = min_max_player(state, true) + "\"WHITE\"}";
+    send_to_server(result);
+    usleep(500*1000);
+    recive_from_server();
     usleep(100*1000);
+    while(true){
+      vector<vector<char>> recived_status = recive_from_server();
+      cout << "RECIVED FROM SERVER" << endl;
+      print_state(recived_status);
+      cout << "+++++++++++++++++++++++++++++++++" << endl;
+      result = min_max_player(recived_status, true) + "\"WHITE\"}";
+      send_to_server(result);
+      usleep(100*1000);
+      recive_from_server();
+      usleep(100*1000);
+    }
   }
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // send_to_server(result);
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // recive_from_server_tutto();
-  // while(true){
-  //   if (white){
-  //     string result = min_max_player(state, true) + "\"WHITE\"}";
-  //     send_to_server(result);
-  //     recive_from_server();
-  //     recive_from_server();
-  //     return 0;
-  //   }
-  // }
-  // time_t prima = time(NULL);
-  // min_max_player(initial_state, true);
-  // time_t dopo = time(NULL);
-  // cout << "Tempo impiegato: " << dopo - prima << " s" << endl;
+  time_t start = time(NULL);
+  vector<vector<char>> state = initial_state;
+  string result = min_max_player(state, true) + "\"WHITE\"}";
+  time_t end = time(NULL);
+  cout << "Tempo impiegato: " << end -start << " s" << endl;
   return 0;
 }
 
