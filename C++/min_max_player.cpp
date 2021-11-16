@@ -4,12 +4,13 @@
 #include <vector>
 #include <string>
 #include <string.h>
-#include <algorithm>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <time.h>
 
 using namespace std;
 
@@ -61,34 +62,35 @@ vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
 int COUNTER = 0;
 
 string min_max_player(vector<vector<char>> state, bool white){
-  int MAX_DEPH = 5;
+  int MAX_DEPH = 4;
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
   int value;
   if (white){
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), MAX_DEPH, MAX_DEPH, -10000, 10000, true);
-    tuple<vector<vector<char>> , vector<int>, vector<int>> next_state = get<0>(result);
+    next_state = get<0>(result);
     int value = get<1>(result);
+    cout << "MY MOVE" << endl;
     print_state(get<0>(next_state));
     cout << "Best Value: " << value << '\n';
+    cout << "--------------------------" << endl;
   }else{
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int> >, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), MAX_DEPH, MAX_DEPH, -10000, 10000, false);
-    tuple<vector<vector<char>> , vector<int>, vector<int>> next_state = get<0>(result);
+    next_state = get<0>(result);
     int value = get<1>(result);
     print_state(get<0>(next_state));
     cout << "Best Value: " << value << '\n';
   }
   cout << "COUNTER: " << COUNTER << endl;
-  return "ciao";
   return get_move_from_matrix(next_state);
 }
 
 string get_move_from_matrix(tuple<vector<vector<char>> , vector<int>, vector<int>> state){
-  vector<vector<char>> board = get<0>(state);
   vector<int> start = get<1>(state);
   vector<int> end = get<2>(state);
   string str_start = coordinates[start[0]][start[1]];
   string str_end = coordinates[end[0]][end[1]];
-  return str_start + "to" + str_end;
+  return "{\"from\":\"" + str_start + "\",\"to\":\"" + str_end +
+                                    "\",\"turn\":";
 }
 
 class moves{
@@ -533,14 +535,19 @@ void print_state(vector<vector<char>> state){
 void initialize_socket(bool white){
   int valread;
   struct sockaddr_in serv_addr;
-  char *hello = "Hello from client";
+  string ss = "\"Eimar\"";
+  const char * name = ss.c_str();
   char buffer[1024] = {0};
   if ((SOCK = socket(AF_INET, SOCK_STREAM, 0)) < 0){
     printf("\n Socket creation error \n");
   }
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(PORT_WHITE);
+  if (white){
+    serv_addr.sin_port = htons(PORT_WHITE);
+  }else{
+    serv_addr.sin_port = htons(PORT_BLACK);
+  }
 
   // Convert IPv4 and IPv6 addresses from text to binary form
   if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0){
@@ -549,14 +556,206 @@ void initialize_socket(bool white){
   if (connect(SOCK, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
     printf("\nConnection Failed \n");
   }
-  send(SOCK , hello , strlen(hello) , 0 );
-  printf("Hello message sent\n");
-  valread = read( SOCK , buffer, 1024);
-  printf("%s\n",buffer );
+  int name_lenght = ss.length();
+  char * num = reinterpret_cast<char *>(&name_lenght);
+  char * num_completo = new char[4];
+  num_completo[0] = 0;
+  num_completo[1] = 0;
+  num_completo[2] = 0;
+  num_completo[3] = num[0];
+  send(SOCK, num_completo, 4, 0);
+  send(SOCK , name, name_lenght, 0 );
+  printf("My name sent!\n");
+  int ricevuti = read(SOCK , buffer, 1);
+  // char * buff = new char[4];
+  // read(SOCK , buff, 4);
+  // cout << "PRIMA RICEVUTA: " << int(buff[0]) << " " << int(buff[1]) << " " << int(buff[2]) << " " << int(buff[3]) << endl;
+  // read(SOCK , buff, 4);
+  // cout << "PRIMA RICEVUTA: " << int(buff[0]) << " " << int(buff[1]) << " " << int(buff[2]) << " " << int(buff[3]) << endl;
 }
 
+void send_to_server(string ss){
+  int name_lenght = ss.length();
+  char * num = reinterpret_cast<char *>(&name_lenght);
+  cout << int(num[1]) << " " << int(num[0]) << endl;
+  char * num_completo = new char[4];
+  num_completo[0] = 0;
+  num_completo[1] = 0;
+  num_completo[2] = 0;
+  num_completo[3] = num[0];
+  send(SOCK, num_completo, 4, 0);
+  send(SOCK , ss.c_str(), name_lenght, 0 );
+}
+
+vector<vector<char>> recive_from_server(){
+  char * buffer = new char[2048];
+  int ricevuti = -1;
+  while(true){
+    ricevuti = read(SOCK , buffer, 1024);
+    if (ricevuti >= 600){
+      break;
+    }
+  }
+  cout << "Dati grezzi ricevuti:" << endl;
+  for (int i = 0; i < ricevuti; i++){
+    cout << buffer[i];
+  }
+  cout << "\n+++++++++++++++++++++++" << endl;
+  int interesting_finish = 673;
+  vector<vector<char>> recived_status;
+  recived_status.push_back(vector<char>());
+  int i = 0;
+  while(true){
+    if (buffer[i] == '['){
+      break;
+    }
+    i++;
+  }
+  string ss = "";
+  while (true){
+    if (buffer[i] == 't'){
+      break;
+    }
+    if (buffer[i-2] == ']' && buffer[i-1] == ',' && buffer[i] == '['){
+      recived_status.push_back(vector<char>());
+      i++;
+      i++;
+    }
+    ss.clear();
+    while(true){
+      if (buffer[i] == '"'){
+        break;
+      }
+      ss += buffer[i];
+      i++;
+    }
+    if (ss.compare("WHITE") == 0){
+      recived_status[recived_status.size()-1].push_back(1);
+    }else if (ss.compare("BLACK") == 0){
+      recived_status[recived_status.size()-1].push_back(2);
+    }else if (ss.compare("EMPTY") == 0){
+      recived_status[recived_status.size()-1].push_back(0);
+    }else if (ss.compare("KING") == 0){
+      recived_status[recived_status.size()-1].push_back(3);
+    }else if (ss.compare("THRONE") == 0){
+      recived_status[recived_status.size()-1].push_back(0);
+    }
+    while(true){
+      char el = buffer[i];
+      if (buffer[i] != '"' && buffer[i] != ',' && buffer[i] != ']'){
+        break;
+      }
+      i++;
+    }
+  }
+  // cout << "Recived status:" << endl;
+  // print_state(recived_status);
+  // cout << "----------------------" << endl;
+  cout << endl;
+  // int * punt_num = reinterpret_cast<int * >(buffer);
+  // cout << "Ricevuti: " << punt_num[0] << " / " << punt_num[1] << endl;
+  return recived_status;
+}
+
+void recive_from_server_tutto(){
+  char * buffer = new char[1000];
+  int ricevuti = read(SOCK , buffer, 1000);
+  cout << "BUFFER:" << endl;
+  for (int i = 0; i < ricevuti; i++){
+    cout << buffer[i];
+  }
+  cout << endl;
+}
+void recive_from_server_int(){
+  unsigned char * buffer = new unsigned char[4]{0, 0, 0, 0};
+  int ricevuti = read(SOCK , buffer, 4);
+  int a = int((unsigned char)(buffer[0]) << 24 |
+            (unsigned char)(buffer[1]) << 16 |
+            (unsigned char)(buffer[2]) << 8 |
+            (unsigned char)(buffer[3]));
+  cout << "Dati che stai per ricevere: " << a << endl;
+  cout << int(buffer[0]) << "/" << int(buffer[1]) << "/" << int(buffer[2]) << "/" << int(buffer[3]) << endl;
+}
+// Tolto problema ram:
+// depth 5 -> 20 s
+// depth 6 -> 967 s
+
 int main(){
+  bool white = true;
   cout << "Inizio a calcolare le mosse per lo stato iniziale!" << endl;
-  min_max_player(initial_state, true);
+  initialize_socket(true);
+  usleep(100*1000);
+  recive_from_server();
+  //recive_from_server();
+  vector<vector<char>> state = initial_state;
+  string result = min_max_player(state, true) + "\"WHITE\"}";
+  send_to_server(result);
+  usleep(500*1000);
+  recive_from_server();
+  usleep(100*1000);
+  while(true){
+    vector<vector<char>> recived_status = recive_from_server();
+    cout << "RECIVED FROM SERVER" << endl;
+    print_state(recived_status);
+    cout << "+++++++++++++++++++++++++++++++++" << endl;
+    result = min_max_player(recived_status, true) + "\"WHITE\"}";
+    send_to_server(result);
+    usleep(100*1000);
+    recive_from_server();
+    usleep(100*1000);
+  }
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // send_to_server(result);
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // recive_from_server_tutto();
+  // while(true){
+  //   if (white){
+  //     string result = min_max_player(state, true) + "\"WHITE\"}";
+  //     send_to_server(result);
+  //     recive_from_server();
+  //     recive_from_server();
+  //     return 0;
+  //   }
+  // }
+  // time_t prima = time(NULL);
+  // min_max_player(initial_state, true);
+  // time_t dopo = time(NULL);
+  // cout << "Tempo impiegato: " << dopo - prima << " s" << endl;
   return 0;
 }
+
+/*
+DEPTH 7:
+Inizio a calcolare le mosse per lo stato iniziale!
+0 0 0 2 2 2 0 0 0
+0 0 0 0 2 0 0 0 0
+0 0 0 0 1 0 0 0 0
+2 0 0 0 1 0 0 0 2
+2 2 0 1 3 1 1 2 2
+2 0 0 0 1 0 0 0 2
+0 0 0 0 1 0 0 0 0
+0 0 0 0 2 0 0 0 0
+0 0 1 2 2 2 0 0 0
+Best Value: -40
+COUNTER: 609798506
+*/
