@@ -75,8 +75,9 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
       std::condition_variable cv;
 
       std::thread t([&](){
-
-          retValue = min_max_player(state, white);
+          while (true){
+            retValue = min_max_player(state, white);
+          }
           cv.notify_one();
       });
 
@@ -93,12 +94,11 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
     return retValue;
 }
 
-string min_max_player(vector<vector<char>> state, bool white){
-  int MAX_DEPH = 5;
+string min_max_player(vector<vector<char>> state, bool white, int max_depth){
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
   int value;
   if (white){
-    tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), MAX_DEPH, MAX_DEPH, -10000, 10000, true);
+    tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, true);
     next_state = get<0>(result);
     int value = get<1>(result);
     cout << "MY MOVE" << endl;
@@ -106,7 +106,7 @@ string min_max_player(vector<vector<char>> state, bool white){
     cout << "Best Value: " << value << '\n';
     cout << "--------------------------" << endl;
   }else{
-    tuple<tuple<vector<vector<char>> , vector<int>, vector<int> >, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), MAX_DEPH, MAX_DEPH, -10000, 10000, false);
+    tuple<tuple<vector<vector<char>> , vector<int>, vector<int> >, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, false);
     next_state = get<0>(result);
     int value = get<1>(result);
     print_state(get<0>(next_state));
