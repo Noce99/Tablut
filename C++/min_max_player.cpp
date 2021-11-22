@@ -12,9 +12,14 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 using namespace std;
 
+string min_max_player_wrapper(vector<vector<char>>, bool, int);
 bool check_if_deadth(vector<vector<char>>, int, int, int, int, int, int, int);
 void print_state(vector<vector<char>>);
 bool get_if_state_is_a_finish_game_state(vector<vector<char>>);
@@ -62,6 +67,31 @@ vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
                                       {0, 0, 0, 2, 2, 2, 0, 0, 0}};
 
 int COUNTER = 0;
+
+string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
+    string retValue = " ";
+    try {
+      std::mutex m;
+      std::condition_variable cv;
+
+      std::thread t([&](){
+
+          retValue = min_max_player(state, white);
+          cv.notify_one();
+      });
+
+      t.detach();
+
+      {
+          std::unique_lock<std::mutex> l(m);
+          if(cv.wait_for(l, chrono::duration<int, std::milli>(time)) == std::cv_status::timeout)
+              throw std::runtime_error("Timeout");
+      }
+    } catch(std::runtime_error& e) {
+      cout << "Timeout :" << e.what() << endl;
+    }
+    return retValue;
+}
 
 string min_max_player(vector<vector<char>> state, bool white){
   int MAX_DEPH = 5;
@@ -726,15 +756,28 @@ vector<vector<char>> recive_from_server(){
   return recived_status;
 }
 
-int main(){
-  bool white = false;
-  bool server = false;
-  if (server && white){
+int main(int argc, char *argv[]){
+  int TIME;
+  bool COLOR;
+  if (argc == 1){
+    cout << "./min_max_player <black|white> <time>" << endl;
+    cout << "Non mi hai detto il colore!" << endl;
+    return -1;
+  }else if (argc == 2){
+    if (argv[1] == "white"){
+      COLOR = true;
+    }else if (argv[1] == "black"){
+      COLOR = false;
+    }
+    TIME = 60;
+  }
+  bool server = true;
+  if (server && COLOR){
     initialize_socket(true);
     usleep(100*1000);
     recive_from_server();
     vector<vector<char>> state = initial_state;
-    string result = min_max_player(state, true) + "\"WHITE\"}";
+    string result = min_max_player_wrapper(state, COLOR, TIME) + "\"WHITE\"}";
     send_to_server(result);
     usleep(500*1000);
     recive_from_server();
@@ -744,7 +787,8 @@ int main(){
       cout << "RECIVED FROM SERVER" << endl;
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
-      result = min_max_player(recived_status, true) + "\"WHITE\"}";
+      bool timedout = false;
+      result = min_max_player_wrapper(recived_status, COLOR, TIME) + "\"WHITE\"}";
       cout << result << endl;
       send_to_server(result);
       usleep(100*1000);
@@ -752,7 +796,7 @@ int main(){
       usleep(100*1000);
     }
   }
-  if (server && !white){
+  if (server && !COLOR){
     cout << "CIAO" << endl;
     initialize_socket(false);
     usleep(100*1000);
@@ -765,7 +809,9 @@ int main(){
       cout << "RECIVED FROM SERVER" << endl;
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
-      result = min_max_player(recived_status, false) + "\"BLACK\"}";
+      bool timedout = false;
+      result = min_max_player_wrapper(recived_status, COLOR, TIME) + "\"BLACK\"}";
+      cout << result << endl;
       send_to_server(result);
       usleep(100*1000);
       recive_from_server();
