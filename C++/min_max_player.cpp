@@ -31,7 +31,7 @@ bool check_if_killer(vector<vector<char>>, vector<int>, vector<int>);
 tuple<vector<vector<char>>, vector<int>, vector<int>> get_new_state(vector<vector<char>>, vector<int>, vector<int>);
 bool check_move(vector<vector<char>>, vector<int>, vector<int>);
 string get_move_from_matrix(tuple<vector<vector<char>> , vector<int>, vector<int>>);
-string min_max_player(vector<vector<char>>, bool);
+string min_max_player(vector<vector<char>>, bool, int);
 
 #define PORT_WHITE 5800
 #define PORT_BLACK 5801
@@ -76,7 +76,10 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
 
       std::thread t([&](){
           while (true){
-            retValue = min_max_player(state, white);
+            int depth = 2;
+            retValue = min_max_player(state, white, depth);
+            cout << "fatto " << depth << endl;
+            depth++;
           }
           cv.notify_one();
       });
@@ -762,7 +765,8 @@ int main(int argc, char *argv[]){
   if (argc == 1){
     cout << "./min_max_player <black|white> <time>" << endl;
     cout << "Non mi hai detto il colore!" << endl;
-    return -1;
+    COLOR = true;
+    TIME = 60;
   }else if (argc == 2){
     if (strcmp(argv[1], "white") == 0){
       COLOR = true;
@@ -826,11 +830,11 @@ int main(int argc, char *argv[]){
       usleep(100*1000);
     }
   }
-  time_t start = time(NULL);
-  vector<vector<char>> state = initial_state;
-  string result = min_max_player(state, false);
-  time_t end = time(NULL);
-  cout << "Tempo impiegato: " << end -start << " s" << endl;
+  // time_t start = time(NULL);
+  // vector<vector<char>> state = initial_state;
+  // string result = min_max_player(state, false);
+  // time_t end = time(NULL);
+  // cout << "Tempo impiegato: " << end -start << " s" << endl;
   return 0;
 }
 
