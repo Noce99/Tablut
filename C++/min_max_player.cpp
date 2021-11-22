@@ -11,9 +11,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 
 using namespace std;
 
+bool check_if_deadth(vector<vector<char>>, int, int, int, int, int, int, int);
 void print_state(vector<vector<char>>);
 bool get_if_state_is_a_finish_game_state(vector<vector<char>>);
 int state_evaluation(vector<vector<char>>);
@@ -51,7 +53,7 @@ const int color [9] [9] = {{0, 2, 2, 5, 5, 5, 2, 2, 0},
 
 vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
                                       {0, 0, 0, 0, 2, 0, 0, 0, 0},
-                                      {0, 0, 0, 0, 1, 0, 0, 0, 0},
+                                      {0, 1, 0, 0, 0, 0, 0, 0, 0},
                                       {2, 0, 0, 0, 1, 0, 0, 0, 2},
                                       {2, 2, 1, 1, 3, 1, 1, 2, 2},
                                       {2, 0, 0, 0, 1, 0, 0, 0, 2},
@@ -62,7 +64,7 @@ vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
 int COUNTER = 0;
 
 string min_max_player(vector<vector<char>> state, bool white){
-  int MAX_DEPH = 6;
+  int MAX_DEPH = 5;
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
   int value;
   if (white){
@@ -281,60 +283,120 @@ tuple<vector<vector<char>> , vector<int>, vector<int>> get_new_state(vector<vect
   int j = start[1];
   int ii = end[0];
   int jj = end[1];
+  int attack_color = color[ii][jj];
   new_state[ii][jj] = new_state[i][j];
   new_state[i][j] = 0;
-  vector<vector<int>> to_check = get_around(end);
-  for (int k = 0; k < 4; k++){
-    vector<int> e = to_check[k];
-    // cout << "[" << e[0] << "; " << e[1] << "]" << endl;
-    if (e[0] != -1 && new_state[e[0]][e[1]] != 0 && new_state[e[0]][e[1]] != new_state[end[0]][end[1]]){
-      vector<vector<int>> around = get_around(e);
-      vector<vector<int>> opposites_1 = {around[0], around[2]};
-      vector<vector<int>> opposites_2 = {around[1], around[3]};
-      if ((new_state[e[0]][e[1]] == 3) && (new_state[ii][jj] == 2)){
-        if ((color[e[0]][e[1]] == 3) || (color[e[0]][e[1]] == 4)){
-          if (check_if_killer(new_state, around[0], e) &&
-              check_if_killer(new_state, around[2], e) &&
-              check_if_killer(new_state, around[1], e) &&
-              check_if_killer(new_state, around[3], e)){
-            new_state[e[0]][e[1]] = 0;
-            // print_state(new_state);
-            // cout << "----------------" << endl;
-          }
-        }else if (((end[0] == opposites_1[0][0] && end[1] == opposites_1[0][1]) || (end[0] == opposites_1[1][0] && end[1] == opposites_1[1][1])) &&
-                   check_if_killer(new_state, around[0], e) &&
-                   check_if_killer(new_state, around[2], e)){
-          new_state[e[0]][e[1]] = 0;
-          // print_state(new_state);
-          // cout << "----------------" << endl;
-        }else if (((end[0] == opposites_2[0][0] && end[1] == opposites_2[0][1]) || (end[0] == opposites_2[1][0] && end[1] == opposites_2[1][1])) &&
-                   check_if_killer(new_state, around[1], e) &&
-                   check_if_killer(new_state, around[3], e)){
-          new_state[e[0]][e[1]] = 0;
-          // print_state(new_state);
-          // cout << "----------------" << endl;
-        }
-      }else{
-        // cout << "end: " << end[0] << " ; " << end[1] << endl;
-        // cout << "opposites_1[0]: " << opposites_1[0][0] << " ; " << opposites_1[0][1] << endl;
-        // cout << "opposites_1[1]: " << opposites_1[1][0] << " ; " << opposites_1[1][1] << endl;
-        // cout << "opposites_2[0]: " << opposites_2[0][0] << " ; " << opposites_2[0][1] << endl;
-        // cout << "opposites_2[1]: " << opposites_2[1][0] << " ; " << opposites_2[1][1] << endl;
-        // cout << "checcko: " << around[0][0] << " ; " << around[0][1] << " -> " << check_if_killer(new_state, around[0], e) << endl;
-        // cout << "checcko: " << around[2][0] << " ; " << around[2][1] << " -> " << check_if_killer(new_state, around[2], e) << endl;
-        if (((end[0] == opposites_1[0][0] && end[1] == opposites_1[0][1]) || (end[0] == opposites_1[1][0] && end[1] == opposites_1[1][1])) && check_if_killer(new_state, around[0], e) && check_if_killer(new_state, around[2], e)){
-          new_state[e[0]][e[1]] = 0;
-          // print_state(new_state);
-          // cout << "----------------" << endl;
-        }else if (((end[0] == opposites_2[0][0] && end[1] == opposites_2[0][1]) || (end[0] == opposites_2[1][0] && end[1] == opposites_2[1][1])) && check_if_killer(new_state, around[1], e) && check_if_killer(new_state, around[3], e)){
-          new_state[e[0]][e[1]] = 0;
-          // print_state(new_state);
-          // cout << "----------------" << endl;
-        }
-      }
+
+  int i_check = 0;
+  int j_check = 0;
+  int i_check_2 = 0;
+  int j_check_2 = 0;
+  //SOPRA
+  if (end[0] >= 2){
+    i_check = ii - 1;
+    j_check = jj;
+    i_check_2 = ii - 2;
+    j_check_2 = jj;
+    if (check_if_deadth(new_state, attack_color, ii, jj,  i_check, j_check, i_check_2, j_check_2)){
+      new_state[i_check][j_check] = 0;
+    }
+  }
+  //SOTTO
+  if (end[0] <= 6){
+    i_check = ii + 1;
+    j_check = jj;
+    i_check_2 = ii + 2;
+    j_check_2 = jj;
+    if (check_if_deadth(new_state, attack_color, ii, jj, i_check, j_check, i_check_2, j_check_2)){
+      new_state[i_check][j_check] = 0;
+    }
+  }
+  //SINISTRA
+  if (end[1] >= 2){
+    i_check = ii;
+    j_check = jj - 1;
+    i_check_2 = ii;
+    j_check_2 = jj - 2;
+    if (check_if_deadth(new_state, attack_color, ii, jj, i_check, j_check, i_check_2, j_check_2)){
+      new_state[i_check][j_check] = 0;
+    }
+  }
+  //DESTRA
+  if (end[1] <= 6){
+    i_check = ii;
+    j_check = jj + 1;
+    i_check_2 = ii;
+    j_check_2 = jj + 2;
+    if (check_if_deadth(new_state, attack_color, ii, jj, i_check, j_check, i_check_2, j_check_2)){
+      new_state[i_check][j_check] = 0;
     }
   }
   return make_tuple(new_state, start, end);
+  }
+
+bool check_if_deadth(vector<vector<char>> new_state,int attack_color, int ii, int jj, int i_check, int j_check, int i_check_2, int j_check_2){
+  int defense_color = color[i_check][j_check];
+  int attack_type = new_state[ii][jj];
+  int defence_type = new_state[i_check][j_check];
+  if (new_state[i_check][j_check] != -1 && new_state[i_check][j_check] != 0){
+    defense_color = color[i_check][j_check];
+    if ((attack_type == 1 || attack_type==3) && defence_type == 2){
+      if (new_state[i_check_2][j_check_2] == 1 || new_state[i_check_2][j_check_2] == 3){
+        return true;
+      }else if (color[i_check_2][j_check_2] == 3){
+        return true;
+      }else if ((color[i_check_2][j_check_2] == 5 ||
+                  color[i_check_2][j_check_2] == 6 ||
+                  color[i_check_2][j_check_2] == 7 ||
+                  color[i_check_2][j_check_2] == 8 ||
+                  color[i_check_2][j_check_2] == 3) &&
+                (color[i_check][j_check] != 5 &&
+                  color[i_check][j_check] != 6 &&
+                  color[i_check][j_check] != 7 &&
+                  color[i_check][j_check] != 8 &&
+                  color[i_check][j_check] != 3)){
+        return true;
+      }
+    }else if (attack_type == 2 && defence_type == 1){
+      if (new_state[i_check_2][j_check_2] == 2){
+        return true;
+      }else if (color[i_check_2][j_check_2] == 3){
+        return true;
+      }else if ((color[i_check_2][j_check_2] == 5 ||
+                  color[i_check_2][j_check_2] == 6 ||
+                  color[i_check_2][j_check_2] == 7 ||
+                  color[i_check_2][j_check_2] == 8) &&
+                (color[i_check][j_check] != 5 &&
+                  color[i_check][j_check] != 6 &&
+                  color[i_check][j_check] != 7 &&
+                  color[i_check][j_check] != 8)){
+        return true;
+      }
+    }else if (attack_type == 2 && defence_type == 3){
+      int sum = new_state[i_check+1][j_check] + new_state[i_check-1][j_check] + new_state[i_check][j_check+1] + new_state[i_check][j_check-1];
+      if (defense_color == 3){
+        if (sum == 8){
+          return true;
+        }
+      }else if (defense_color == 4){
+        if (sum == 6){
+          return true;
+        }
+      }else if (new_state[i_check_2][j_check_2] == 2){
+        return true;
+      }else if ((color[i_check_2][j_check_2] == 5 ||
+                  color[i_check_2][j_check_2] == 6 ||
+                  color[i_check_2][j_check_2] == 7 ||
+                  color[i_check_2][j_check_2] == 8) &&
+                (color[i_check][j_check] != 5 &&
+                  color[i_check][j_check] != 6 &&
+                  color[i_check][j_check] != 7 &&
+                  color[i_check][j_check] != 8)){
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 vector<vector<int>> get_around(vector<int> pos){
@@ -454,6 +516,18 @@ bool get_if_state_is_a_finish_game_state(vector<vector<char>> state){
   return false;
 }
 
+int get_mean_distance_of_blacks_from_king(vector<vector<char>> state, vector<int> king_pos){
+  int dist = 0;
+  for (int row = 0; row < 9; row++){
+    for(int col = 0; col < 9; col++){
+      if(state[row][col] == 2){
+          dist = dist + sqrt((row - king_pos[0])*(row - king_pos[0]) + (col - king_pos[1])*(col - king_pos[1]));
+      }
+    }
+  }
+  return int((dist - 60)/2);
+}
+
 int state_evaluation(vector<vector<char>> state){
   COUNTER++;
   vector<int> pos = get_king_position_on_board(state);
@@ -466,6 +540,7 @@ int state_evaluation(vector<vector<char>> state){
   int tot = 0;
   tot += get_num_of_white_peaces(state) * 15;
   tot += get_num_of_black_peaces(state) * -10;
+  tot += get_mean_distance_of_blacks_from_king(state, pos);
   return tot;
 }
 
@@ -498,8 +573,9 @@ tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> min_max(tuple
       if (evaluation > alpha){
         alpha = evaluation;
       }
-      if (beta <= alpha)
+      if (beta <= alpha){
         break;
+      }
     }
     if (depth == max_depth)
       return make_tuple(maxChild, maxEval);
@@ -524,8 +600,9 @@ tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> min_max(tuple
       if (evaluation < beta){
         beta = evaluation;
       }
-      if (beta <= alpha)
+      if (beta <= alpha){
         break;
+      }
     }
     if (depth == max_depth)
       return make_tuple(minChild, minEval);
@@ -649,16 +726,10 @@ vector<vector<char>> recive_from_server(){
   return recived_status;
 }
 
-// Tolto problema ram:
-// depth 5 -> 20 s
-// depth 6 -> 967 s
-// Reso più efficiente get_new_state
-// depth 5 -> 12 s
-
 int main(){
-  bool white = true;
+  bool white = false;
   bool server = false;
-  if (server){
+  if (server && white){
     initialize_socket(true);
     usleep(100*1000);
     recive_from_server();
@@ -674,6 +745,27 @@ int main(){
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
       result = min_max_player(recived_status, true) + "\"WHITE\"}";
+      cout << result << endl;
+      send_to_server(result);
+      usleep(100*1000);
+      recive_from_server();
+      usleep(100*1000);
+    }
+  }
+  if (server && !white){
+    cout << "CIAO" << endl;
+    initialize_socket(false);
+    usleep(100*1000);
+    vector<vector<char>> recived_status;
+    string result;
+    recive_from_server();
+    usleep(100*1000);
+    while(true){
+      recived_status = recive_from_server();
+      cout << "RECIVED FROM SERVER" << endl;
+      print_state(recived_status);
+      cout << "+++++++++++++++++++++++++++++++++" << endl;
+      result = min_max_player(recived_status, false) + "\"BLACK\"}";
       send_to_server(result);
       usleep(100*1000);
       recive_from_server();
@@ -682,24 +774,10 @@ int main(){
   }
   time_t start = time(NULL);
   vector<vector<char>> state = initial_state;
-  string result = min_max_player(state, true) + "\"WHITE\"}";
+  string result = min_max_player(state, false);
   time_t end = time(NULL);
   cout << "Tempo impiegato: " << end -start << " s" << endl;
   return 0;
 }
 
-/*
-DEPTH 7:
-Inizio a calcolare le mosse per lo stato iniziale!
-0 0 0 2 2 2 0 0 0
-0 0 0 0 2 0 0 0 0
-0 0 0 0 1 0 0 0 0
-2 0 0 0 1 0 0 0 2
-2 2 0 1 3 1 1 2 2
-2 0 0 0 1 0 0 0 2
-0 0 0 0 1 0 0 0 0
-0 0 0 0 2 0 0 0 0
-0 0 1 2 2 2 0 0 0
-Best Value: -40
-COUNTER: 609798506
-*/
+// DEPTH 5 -> 13 s
