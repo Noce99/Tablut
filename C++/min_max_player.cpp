@@ -764,13 +764,22 @@ int main(int argc, char *argv[]){
     cout << "Non mi hai detto il colore!" << endl;
     return -1;
   }else if (argc == 2){
-    if (argv[1] == "white"){
+    if (strcmp(argv[1], "white") == 0){
       COLOR = true;
-    }else if (argv[1] == "black"){
+    }else if (strcmp(argv[1], "black") == 0){
       COLOR = false;
     }
     TIME = 60;
+    cout << COLOR << endl;
+  }else{
+    if (strcmp(argv[1], "white") == 0){
+      COLOR = true;
+    }else if (strcmp(argv[1], "black") == 0){
+      COLOR = false;
+    }
+    TIME = stoi(string(argv[2]));
   }
+  cout << "Tempo per mossa: " << TIME << endl;
   bool server = true;
   if (server && COLOR){
     initialize_socket(true);
@@ -797,7 +806,6 @@ int main(int argc, char *argv[]){
     }
   }
   if (server && !COLOR){
-    cout << "CIAO" << endl;
     initialize_socket(false);
     usleep(100*1000);
     vector<vector<char>> recived_status;
