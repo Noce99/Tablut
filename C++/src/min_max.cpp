@@ -79,7 +79,12 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
       cout << "Timeout :" << e.what() << endl;
       cout << "Migliore Ottenuto: " << retValues[MEMORY_COUNTER] << endl;
       MEMORY_COUNTER++;
-      return retValues[MEMORY_COUNTER-1];
+      if (MEMORY_COUNTER == 1000){
+        MEMORY_COUNTER = 0;
+        return retValues[1000-1];
+      }else{
+        return retValues[MEMORY_COUNTER-1];
+      }
     }
     return retValues[MEMORY_COUNTER];
 }
