@@ -41,33 +41,60 @@ string coordinates [9] [9] = {{{"A1"}, {"B1"}, {"C1"}, {"D1"}, {"E1"}, {"F1"}, {
 
 int COUNTER = 0;
 
-void min_max_iterative_depth(vector<vector<char>> state, bool white, string const &move){
+void min_max_iterative_depth(vector<vector<char>> state, bool white, string const &move, bool const &die){
   string & move_y = const_cast<string &>(move);
+  bool & die_y = const_cast<bool &>(die);
   int depth = 2;
   while (true){ //rimetti a true
     move_y = min_max_player(state, white, depth);
-    cout << "fatto " << depth << endl;
+    cout << "fatto " << depth << "(" << die_y << ")" << endl;
     depth++;
+    if (die_y){
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+      cout << "Mi uccido!" << endl;
+
+      exit(-1);
+    }
   }
-} 
+}
 
 string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
     string retValue = "";
+    bool die = false;
     try {
-      std::thread t(min_max_iterative_depth, state, white, std::ref(retValue));
-            
+      std::thread t(min_max_iterative_depth, state, white, std::ref(retValue), std::ref(die));
+
       std::mutex m;
       std::condition_variable cv;
-      
+
       t.detach();
 
       {
           std::unique_lock<std::mutex> l(m);
-          if(cv.wait_for(l, chrono::duration<int, std::milli>(15*1000)) == std::cv_status::timeout)
+          if(cv.wait_for(l, chrono::duration<int, std::milli>(5*1000)) == std::cv_status::timeout)
               throw std::runtime_error("Timeout");
+          die = true;
       }
     } catch(std::runtime_error& e) {
       cout << "Timeout :" << e.what() << endl;
+      cout << "Migliore Ottenuto: " << retValue << endl;
       return retValue;
     }
     return retValue;
@@ -80,10 +107,10 @@ string min_max_player(vector<vector<char>> state, bool white, int max_depth){
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, true);
     next_state = get<0>(result);
     int value = get<1>(result);
-    cout << "MY MOVE" << endl;
-    print_state(get<0>(next_state));
-    cout << "Best Value: " << value << '\n';
-    cout << "--------------------------" << endl;
+    // cout << "MY MOVE" << endl;
+    // print_state(get<0>(next_state));
+    // cout << "Best Value: " << value << '\n';
+    // cout << "--------------------------" << endl;
   }else{
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int> >, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, false);
     next_state = get<0>(result);
