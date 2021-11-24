@@ -92,6 +92,7 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
 string min_max_player(vector<vector<char>> state, bool white, int max_depth){
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
   int value;
+  COUNTER = 0;
   if (white){
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, true);
     next_state = get<0>(result);
