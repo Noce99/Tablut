@@ -41,23 +41,29 @@ string coordinates [9] [9] = {{{"A1"}, {"B1"}, {"C1"}, {"D1"}, {"E1"}, {"F1"}, {
 
 int COUNTER = 0;
 
+void min_max_iterative_depth(vector<vector<char>> state, bool white, string const &move){
+  string & move_y = const_cast<string &>(move);
+  int depth = 2;
+  while (depth < 6){ //rimetti a true
+    move_y = min_max_player(state, white, depth);
+    cout << "fatto " << depth << endl;
+    depth++;
+  }
+  cout << "dentro: " << move_y << endl;
+  cout << "finito" << endl;
+} 
+
 string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
-    /*string retValue = " ";
+    string retValue;
+
+    std::thread thread_object(min_max_iterative_depth, state, white, std::ref(retValue));
+    thread_object.join();
+    cout << "fuori:" << retValue << endl;
+/*
     try {
-      std::mutex m;
-      std::condition_variable cv;
-
-      std::thread t([&](){
-          int depth = 2;
-          while (true){
-            retValue = min_max_player(state, white, depth);
-            cout << "fatto " << depth << endl;
-            depth++;
-          }
-          cout << "finito" << endl;
-          cv.notify_one();
-      });
-
+      //std::mutex m;
+      //std::condition_variable cv;
+      
       t.detach();
 
       {
@@ -67,10 +73,13 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
       }
     } catch(std::runtime_error& e) {
       cout << "Timeout :" << e.what() << endl;
-    }
-    return retValue;*/
-    return min_max_player(state, white, 5);
+    }*/
+    return retValue;
+    //return min_max_player(state, white, 5);*
 }
+
+
+
 
 string min_max_player(vector<vector<char>> state, bool white, int max_depth){
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
