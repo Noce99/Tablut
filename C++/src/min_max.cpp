@@ -262,6 +262,8 @@ int black_heuristic(vector<vector<char>> state){
   return tot;
 }
 
+
+
 tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> min_max(tuple<vector<vector<char>>, vector<int>, vector<int>> state, int depth, int max_depth, int alpha, int beta, bool maximize){
   vector<vector<char>> board = get<0>(state);
   if (depth == 0 || get_if_state_is_a_finish_game_state(board))
