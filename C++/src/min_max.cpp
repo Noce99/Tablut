@@ -51,35 +51,18 @@ void min_max_iterative_depth(vector<vector<char>> state, bool white, string cons
     depth++;
     if (die_y){
       cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-      cout << "Mi uccido!" << endl;
-
-      exit(-1);
+      break;
     }
   }
 }
 
+string retValues[1000];
+bool dies[1000];
+int MEMORY_COUNTER = 0;
+
 string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
-    string retValue = "";
-    bool die = false;
     try {
-      std::thread t(min_max_iterative_depth, state, white, std::ref(retValue), std::ref(die));
+      std::thread t(min_max_iterative_depth, state, white, std::ref(retValues[MEMORY_COUNTER]), std::ref(dies[MEMORY_COUNTER]));
 
       std::mutex m;
       std::condition_variable cv;
@@ -90,14 +73,15 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
           std::unique_lock<std::mutex> l(m);
           if(cv.wait_for(l, chrono::duration<int, std::milli>(5*1000)) == std::cv_status::timeout)
               throw std::runtime_error("Timeout");
-          die = true;
       }
     } catch(std::runtime_error& e) {
+      dies[MEMORY_COUNTER] = true;
       cout << "Timeout :" << e.what() << endl;
-      cout << "Migliore Ottenuto: " << retValue << endl;
-      return retValue;
+      cout << "Migliore Ottenuto: " << retValues[MEMORY_COUNTER] << endl;
+      MEMORY_COUNTER++;
+      return retValues[MEMORY_COUNTER-1];
     }
-    return retValue;
+    return retValues[MEMORY_COUNTER];
 }
 
 string min_max_player(vector<vector<char>> state, bool white, int max_depth){
