@@ -1,3 +1,4 @@
+// Commento a cazzo!
 #include <unistd.h>
 #include <iostream>
 #include <ostream>
@@ -7,7 +8,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <time.h> 
+#include <time.h>
 #include <math.h>
 #include <chrono>
 #include <thread>
