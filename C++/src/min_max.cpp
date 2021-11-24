@@ -71,7 +71,7 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
 
       {
           std::unique_lock<std::mutex> l(m);
-          if(cv.wait_for(l, chrono::duration<int, std::milli>(5*1000)) == std::cv_status::timeout)
+          if(cv.wait_for(l, chrono::duration<int, std::milli>(15*1000)) == std::cv_status::timeout)
               throw std::runtime_error("Timeout");
       }
     } catch(std::runtime_error& e) {
