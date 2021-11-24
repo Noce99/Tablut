@@ -44,42 +44,34 @@ int COUNTER = 0;
 void min_max_iterative_depth(vector<vector<char>> state, bool white, string const &move){
   string & move_y = const_cast<string &>(move);
   int depth = 2;
-  while (depth < 6){ //rimetti a true
+  while (true){ //rimetti a true
     move_y = min_max_player(state, white, depth);
     cout << "fatto " << depth << endl;
     depth++;
   }
-  cout << "dentro: " << move_y << endl;
-  cout << "finito" << endl;
 } 
 
 string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
-    string retValue;
-
-    std::thread thread_object(min_max_iterative_depth, state, white, std::ref(retValue));
-    thread_object.join();
-    cout << "fuori:" << retValue << endl;
-/*
+    string retValue = "";
     try {
-      //std::mutex m;
-      //std::condition_variable cv;
+      std::thread t(min_max_iterative_depth, state, white, std::ref(retValue));
+            
+      std::mutex m;
+      std::condition_variable cv;
       
       t.detach();
 
       {
           std::unique_lock<std::mutex> l(m);
-          if(cv.wait_for(l, chrono::duration<int, std::milli>(5*1000)) == std::cv_status::timeout)
+          if(cv.wait_for(l, chrono::duration<int, std::milli>(15*1000)) == std::cv_status::timeout)
               throw std::runtime_error("Timeout");
       }
     } catch(std::runtime_error& e) {
       cout << "Timeout :" << e.what() << endl;
-    }*/
+      return retValue;
+    }
     return retValue;
-    //return min_max_player(state, white, 5);*
 }
-
-
-
 
 string min_max_player(vector<vector<char>> state, bool white, int max_depth){
   tuple<vector<vector<char>> , vector<int>, vector<int>> next_state;
