@@ -4,6 +4,9 @@
 #include <string.h>
 #include <iostream>
 #include <vector>
+#include <time.h>
+
+
 #include "headers/min_max.hpp"
 #include "headers/socket.hpp"
 
@@ -11,7 +14,7 @@ using namespace std;
 
 vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
                                       {0, 0, 0, 0, 2, 0, 0, 0, 0},
-                                      {0, 1, 0, 0, 0, 0, 0, 0, 0},
+                                      {0, 0, 0, 0, 1, 0, 0, 0, 0},
                                       {2, 0, 0, 0, 1, 0, 0, 0, 2},
                                       {2, 2, 1, 1, 3, 1, 1, 2, 2},
                                       {2, 0, 0, 0, 1, 0, 0, 0, 2},
@@ -23,7 +26,7 @@ vector<vector<char>> initial_state = {{0, 0, 0, 2, 2, 2, 0, 0, 0},
 void print_state(vector<vector<char>>);
 
 int main(int argc, char *argv[]){
-  int time;
+  int time_needed;
   bool white;
   if (argc == 1){
     cout << "Usage: ./einars_player <black|white> [time]" << endl;
@@ -37,23 +40,23 @@ int main(int argc, char *argv[]){
     } else {
       cout << "Choose black or white color!\nExit...\n" << endl;
     }
-    time = 60;
+    time_needed = 60;
   }else{
     if (strncmp(argv[1], "white", 5) == 0){
       white = true;
     }else if (strncmp(argv[1], "black", 5) == 0){
       white = false;
     }
-    time = stoi(string(argv[2]));
+    time_needed = stoi(string(argv[2]));
   }
   cout << "Player: " << (white ? "WHITE" : "BLACK") << endl;
-  cout << "Timeout: " << time << "s" << endl;
+  cout << "Timeout: " << time_needed << "s" << endl;
   if (white){
     Socket s (true);
     usleep(100*1000);
     s.recive_from_server();
     vector<vector<char>> state = initial_state;
-    string result = min_max_player_wrapper(state, white, time) + "\"WHITE\"}";
+    string result = min_max_player_wrapper(state, white, time_needed, time(NULL)) + "\"WHITE\"}";
     s.send_to_server(result);
     usleep(500*1000);
     s.recive_from_server();
@@ -64,7 +67,7 @@ int main(int argc, char *argv[]){
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
       bool timedout = false;
-      result = min_max_player_wrapper(recived_status, white, time) + "\"WHITE\"}";
+      result = min_max_player_wrapper(recived_status, white, time_needed, time(NULL)) + "\"WHITE\"}";
       cout << result << endl;
       s.send_to_server(result);
       usleep(100*1000);
@@ -84,7 +87,7 @@ int main(int argc, char *argv[]){
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
       bool timedout = false;
-      result = min_max_player_wrapper(recived_status, white, time) + "\"BLACK\"}";
+      result = min_max_player_wrapper(recived_status, white, time_needed, time(NULL)) + "\"BLACK\"}";
       cout << result << endl;
       s.send_to_server(result);
       usleep(100*1000);

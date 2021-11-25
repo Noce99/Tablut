@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-std::string min_max_player_wrapper(std::vector<std::vector<char>>, bool, int);
+std::string min_max_player_wrapper(std::vector<std::vector<char>>, bool, int, time_t);
 void print_state(std::vector<std::vector<char>>);
 bool get_if_state_is_a_finish_game_state(std::vector<std::vector<char>>);
 int state_evaluation(std::vector<std::vector<char>>);

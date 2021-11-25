@@ -95,6 +95,7 @@ string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
     } catch(std::runtime_error& e) {
       cout << "Timeout :" << e.what() << endl;
     }
+    usleep(100);
     return retValue;
 }
 

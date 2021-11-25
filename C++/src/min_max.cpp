@@ -10,10 +10,7 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <math.h>
-#include <chrono>
-#include <thread>
 #include <mutex>
-#include <condition_variable>
 #include "headers/moves.hpp"
 #include "headers/utils.hpp"
 #include "headers/min_max.hpp"
@@ -40,53 +37,23 @@ string coordinates [9] [9] = {{{"A1"}, {"B1"}, {"C1"}, {"D1"}, {"E1"}, {"F1"}, {
                             };
 
 int COUNTER = 0;
+time_t START_TIME = 0;
+time_t MAX_TIME = 0;
 
-void min_max_iterative_depth(vector<vector<char>> state, bool white, string const &move, bool const &die){
-  string & move_y = const_cast<string &>(move);
-  bool & die_y = const_cast<bool &>(die);
-  int depth = 2;
-  while (true){ //rimetti a true
-    move_y = min_max_player(state, white, depth);
-    cout << "fatto " << depth << "(" << die_y << ")" << endl;
-    depth++;
-    if (die_y){
-      cout << "Mi uccido!" << endl;
-      break;
-    }
-  }
-}
 
-string retValues[1000];
-bool dies[1000];
-int MEMORY_COUNTER = 0;
-
-string min_max_player_wrapper(vector<vector<char>> state, bool white, int time){
+string min_max_player_wrapper(vector<vector<char>> state, bool white, int time_needed, time_t start_time){
+    string move;
+    START_TIME = start_time;
+    MAX_TIME = time_needed;
+    int depth = 3;
     try {
-      std::thread t(min_max_iterative_depth, state, white, std::ref(retValues[MEMORY_COUNTER]), std::ref(dies[MEMORY_COUNTER]));
-
-      std::mutex m;
-      std::condition_variable cv;
-
-      t.detach();
-
-      {
-          std::unique_lock<std::mutex> l(m);
-          if(cv.wait_for(l, chrono::duration<int, std::milli>(15*1000)) == std::cv_status::timeout)
-              throw std::runtime_error("Timeout");
+      while (true){ //rimetti a true
+        move = min_max_player(state, white, depth);
+        cout << "Done depth " << depth << "!" << endl;
+        depth++;
       }
-    } catch(std::runtime_error& e) {
-      dies[MEMORY_COUNTER] = true;
-      cout << "Timeout :" << e.what() << endl;
-      cout << "Migliore Ottenuto: " << retValues[MEMORY_COUNTER] << endl;
-      MEMORY_COUNTER++;
-      if (MEMORY_COUNTER == 1000){
-        MEMORY_COUNTER = 0;
-        return retValues[1000-1];
-      }else{
-        return retValues[MEMORY_COUNTER-1];
-      }
-    }
-    return retValues[MEMORY_COUNTER];
+    } catch(int e) {}
+    return move;
 }
 
 string min_max_player(vector<vector<char>> state, bool white, int max_depth){
@@ -96,7 +63,7 @@ string min_max_player(vector<vector<char>> state, bool white, int max_depth){
   if (white){
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, true);
     next_state = get<0>(result);
-    int value = get<1>(result);
+    value = get<1>(result);
     // cout << "MY MOVE" << endl;
     // print_state(get<0>(next_state));
     // cout << "Best Value: " << value << '\n';
@@ -104,11 +71,11 @@ string min_max_player(vector<vector<char>> state, bool white, int max_depth){
   }else{
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int> >, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, false);
     next_state = get<0>(result);
-    int value = get<1>(result);
-    print_state(get<0>(next_state));
-    cout << "Best Value: " << value << '\n';
+    value = get<1>(result);
+    // print_state(get<0>(next_state));
+    // cout << "Best Value: " << value << '\n';
   }
-  cout << "COUNTER: " << COUNTER << endl;
+  cout << "Move Counter: " << COUNTER << "\nBest Value: " << value << endl;
   return get_move_from_matrix(next_state);
 }
 
@@ -198,6 +165,11 @@ int get_black_near_king(vector<vector<char>> state, vector<int> king_pos){
 
 int state_evaluation(vector<vector<char>> state){
   COUNTER++;
+  if (COUNTER % 50000 == 0){
+    if (time(NULL)-START_TIME > MAX_TIME-1){
+      throw 10;
+    }
+  }
   vector<int> pos = get_king_position_on_board(state);
   if (pos == vector<int>()){
     return -1000;
@@ -211,48 +183,6 @@ int state_evaluation(vector<vector<char>> state){
   tot += get_mean_distance_of_blacks_from_king(state, pos);
   return tot;
 }
-
-int heuristic_wrapper(vector<vector<char>> state, bool white){
-  if(white){
-    return white_heuristic(state);
-  } else{
-     return black_heuristic(state);
-  }
-}
-
-int white_heuristic(vector<vector<char>> state){
-  vector<int> k_pos = get_king_position_on_board(state);
-  if (k_pos == vector<int>()){
-    return -1000;
-  }
-  if (color[k_pos[0]][k_pos[1]] == 2){
-    return 1000;
-  }
-  int tot = 0;
-  tot += get_num_of_white_peaces(state) * H_WHITE;
-  tot += (B_PAWNS - get_num_of_black_peaces(state)) * H_B_EATEN;
-  //tot += get_mean_distance_of_blacks_from_king(state, k_pos);
-  tot -= get_black_near_king(state, k_pos) * H_B_NEAR_KING;
-  return tot;
-}
-
-int black_heuristic(vector<vector<char>> state){
-  vector<int> k_pos = get_king_position_on_board(state);
-  if (k_pos == vector<int>()){
-    return -1000;
-  }
-  if (color[k_pos[0]][k_pos[1]] == 2){
-    return 1000;
-  }
-  int tot = 0;
-  tot -= get_num_of_white_peaces(state) * H_WHITE;
-  tot -= (W_PAWNS - get_num_of_white_peaces(state)) * H_W_EATEN;
-  //tot -= get_mean_distance_of_blacks_from_king(state, k_pos);
-  tot -= get_black_near_king(state, k_pos) * H_B_NEAR_KING;
-  return tot;
-}
-
-
 
 tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> min_max(tuple<vector<vector<char>>, vector<int>, vector<int>> state, int depth, int max_depth, int alpha, int beta, bool maximize){
   vector<vector<char>> board = get<0>(state);

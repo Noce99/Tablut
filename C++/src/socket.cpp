@@ -51,7 +51,7 @@ Socket::Socket(bool white){
 void Socket::send_to_server(string ss){
     int name_lenght = ss.length();
     char * num = reinterpret_cast<char *>(&name_lenght);
-    cout << int(num[1]) << " " << int(num[0]) << endl;
+    // cout << int(num[1]) << " " << int(num[0]) << endl;
     char * num_completo = new char[4];
     num_completo[0] = 0;
     num_completo[1] = 0;
@@ -117,6 +117,6 @@ vector<vector<char>> Socket::recive_from_server(){
             i++;
         }
     }
-    cout << endl;
+    //cout << endl;
     return recived_status;
 }
