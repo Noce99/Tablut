@@ -157,7 +157,6 @@ int state_evaluation(vector<vector<char>> state){
   }
   int tot = 0;
   vector<int> peaces = get_num_of_peaces(state);
-  cout << "Numero di pezzi bianchi: " << peaces[0] << " Neri: " << peaces[1] << endl;
   tot += peaces[0] * 15;
   tot += peaces[1] * -10;
   tot += get_mean_distance_of_blacks_from_king(state, pos);
