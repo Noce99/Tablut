@@ -102,24 +102,16 @@ vector<int> get_king_position_on_board(vector<vector<char>> state){
   return vector<int>();
 }
 
-int get_num_of_white_peaces(vector<vector<char>> state){
-  int counter = 0;
+vector<int> get_num_of_peaces(vector<vector<char>> state){
+  vector<int> counter;
+  counter.push_back(0);
+  counter.push_back(0);
   for (int i = 0; i < 9; i++){
     for (int j = 0; j < 9; j++){
       if (state[i][j] == 1){
-        counter ++;
-      }
-    }
-  }
-  return counter;
-}
-
-int get_num_of_black_peaces(vector<vector<char>> state){
-  int counter = 0;
-  for (int i = 0; i < 9; i++){
-    for (int j = 0; j < 9; j++){
-      if (state[i][j] == 2){
-        counter ++;
+        counter[0] ++;
+      }else if (state[i][j] == 2){
+        counter[1] ++;
       }
     }
   }
@@ -149,20 +141,6 @@ int get_mean_distance_of_blacks_from_king(vector<vector<char>> state, vector<int
   return int((dist - 60)/2);
 }
 
-int get_black_near_king(vector<vector<char>> state, vector<int> king_pos){
-  int count = 0;
-  int k_x = king_pos[0], k_y = king_pos[1];
-  if(state[k_x][k_y + 1] == 2)
-    count++;
-  if(state[k_x][k_y - 1] == 2)
-    count++;
-  if(state[k_x + 1][k_y] == 2)
-    count++;
-  if(state[k_x - 1][k_y] == 2)
-    count++;
-  return count;
-}
-
 int state_evaluation(vector<vector<char>> state){
   COUNTER++;
   if (COUNTER % 50000 == 0){
@@ -178,8 +156,10 @@ int state_evaluation(vector<vector<char>> state){
     return 1000;
   }
   int tot = 0;
-  tot += get_num_of_white_peaces(state) * 15;
-  tot += get_num_of_black_peaces(state) * -10;
+  vector<int> peaces = get_num_of_peaces(state);
+  cout << "Numero di pezzi bianchi: " << peaces[0] << " Neri: " << peaces[1] << endl;
+  tot += peaces[0] * 15;
+  tot += peaces[1] * -10;
   tot += get_mean_distance_of_blacks_from_king(state, pos);
   return tot;
 }

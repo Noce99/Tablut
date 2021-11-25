@@ -13,8 +13,6 @@ std::vector<int> get_king_position_on_board(std::vector<std::vector<char>>);
 std::tuple<std::tuple<std::vector<std::vector<char>> , std::vector<int>, std::vector<int>>, int> min_max(std::tuple<std::vector<std::vector<char>>, std::vector<int>, std::vector<int>>, int, int, int, int, bool);
 std::string get_move_from_matrix(std::tuple<std::vector<std::vector<char>> , std::vector<int>, std::vector<int>>);
 std::string min_max_player(std::vector<std::vector<char>>, bool, int);
-int heuristic_wrapper(std::vector<std::vector<char>>, bool);
-int black_heuristic(std::vector<std::vector<char>>);
-int white_heuristic(std::vector<std::vector<char>>);
+std::vector<int> get_num_of_peaces(std::vector<std::vector<char>>);
 
 #endif
