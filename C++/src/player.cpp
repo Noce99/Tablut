@@ -28,8 +28,9 @@ void print_state(vector<vector<char>>);
 int main(int argc, char *argv[]){
   int time_needed;
   bool white;
+  string ip;
   if (argc == 1){
-    cout << "Usage: ./einars_player <black|white> [time]" << endl;
+    cout << "Usage: ./einars_player <black|white> [time] [ip]" << endl;
     cout << "You not specify player color\nExit...\n" << endl;
     exit(-1);
   }else if (argc == 2){
@@ -41,6 +42,15 @@ int main(int argc, char *argv[]){
       cout << "Choose black or white color!\nExit...\n" << endl;
     }
     time_needed = 60;
+    ip = "127.0.0.1";
+  }else if (argc == 3){
+    if (strncmp(argv[1], "white", 5) == 0){
+      white = true;
+    }else if (strncmp(argv[1], "black", 5) == 0){
+      white = false;
+    }
+    time_needed = stoi(string(argv[2]));
+    ip = "127.0.0.1";
   }else{
     if (strncmp(argv[1], "white", 5) == 0){
       white = true;
@@ -48,11 +58,13 @@ int main(int argc, char *argv[]){
       white = false;
     }
     time_needed = stoi(string(argv[2]));
+    ip = string(argv[3]);
   }
   cout << "Player: " << (white ? "WHITE" : "BLACK") << endl;
   cout << "Timeout: " << time_needed << "s" << endl;
+  cout << "Server Ip: " << ip << endl;
   if (white){
-    Socket s (true);
+    Socket s (true, ip);
     usleep(100*1000);
     s.recive_from_server();
     vector<vector<char>> state = initial_state;
@@ -75,7 +87,7 @@ int main(int argc, char *argv[]){
       usleep(100*1000);
     }
   } else {
-    Socket s (false);
+    Socket s (false, ip);
     usleep(100*1000);
     vector<vector<char>> recived_status;
     string result;

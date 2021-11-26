@@ -141,6 +141,68 @@ int get_mean_distance_of_blacks_from_king(vector<vector<char>> state, vector<int
   return int((dist - 60)/2);
 }
 
+int get_num_of_blacks_around_king(vector<vector<char>> state, vector<int> king_pos){
+  int start_raw, end_raw, start_column, end_column;
+  int counter = 0;
+  if (king_pos[0] > 0){
+    start_raw = king_pos[0] - 1;
+  }else{
+    start_raw = king_pos[0];
+  }
+  if (king_pos[0] < 8){
+    end_raw = king_pos[0] + 1;
+  }else{
+    end_raw = king_pos[0];
+  }
+  if (king_pos[1] > 0){
+    start_column = king_pos[1] - 1;
+  }else{
+    start_column = king_pos[1];
+  }
+  if (king_pos[1] < 8){
+    end_column = king_pos[1] + 1;
+  }else{
+    end_column = king_pos[1];
+  }
+  for (int i = start_raw; i <= end_raw; i++){
+    for (int ii = start_column; ii <= end_column; ii++){
+      if (state[i][ii] == 2){
+        counter++;
+      }
+    }
+  }
+  return counter;
+}
+
+int get_black_that_close_passage(vector<vector<char>> state){
+  int counter = 0;
+  if (state[2][1] == 2){
+    counter ++;
+  }
+  if (state[1][2] == 2){
+    counter ++;
+  }
+  if (state[1][6] == 2){
+    counter ++;
+  }
+  if (state[2][7] == 2){
+    counter ++;
+  }
+  if (state[6][1] == 2){
+    counter ++;
+  }
+  if (state[7][2] == 2){
+    counter ++;
+  }
+  if (state[6][7] == 2){
+    counter ++;
+  }
+  if (state[7][6] == 2){
+    counter ++;
+  }
+  return counter;
+}
+
 int state_evaluation(vector<vector<char>> state){
   COUNTER++;
   if (COUNTER % 50000 == 0){
@@ -159,7 +221,8 @@ int state_evaluation(vector<vector<char>> state){
   vector<int> peaces = get_num_of_peaces(state);
   tot += peaces[0] * 15;
   tot += peaces[1] * -10;
-  tot += get_mean_distance_of_blacks_from_king(state, pos);
+  tot -= get_num_of_blacks_around_king(state, pos);
+  tot -= get_black_that_close_passage(state);
   return tot;
 }
 

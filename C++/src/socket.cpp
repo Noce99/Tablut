@@ -9,7 +9,7 @@
 
 using namespace std;
 
-Socket::Socket(bool white){
+Socket::Socket(bool white, string ip){
     struct sockaddr_in serv_addr;
     string ss = "\"Einars\"";
     const char * name = ss.c_str();
@@ -23,7 +23,7 @@ Socket::Socket(bool white){
     }else{
         serv_addr.sin_port = htons(PORT_BLACK);
     }
-    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0){
+    if(inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr)<=0){
         printf("\nInvalid address/ Address not supported \n");
     }
     if (connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
