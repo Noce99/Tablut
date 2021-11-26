@@ -36,6 +36,25 @@ string coordinates [9] [9] = {{{"A1"}, {"B1"}, {"C1"}, {"D1"}, {"E1"}, {"F1"}, {
                               {{"A9"}, {"B9"}, {"C9"}, {"D9"}, {"E9"}, {"F9"}, {"G9"}, {"H9"}, {"I9"}}
                             };
 
+const int color_heuristic[9][9] = {{0, 2, 2, 1, 1, 1, 2, 2, 0},
+                                  {2, 0, 0, 0, 1, 0, 0, 0, 2},
+                                  {2, 0, 0, 0, 0, 0, 0, 0, 2},
+                                  {1, 0, 0, 0, 4, 0, 0, 0, 1},
+                                  {1, 1, 0, 4, 1, 4, 0, 1, 1},
+                                  {1, 0, 0, 0, 4, 0, 0, 0, 1},
+                                  {2, 0, 0, 0, 0, 0, 0, 0, 2},
+                                  {2, 0, 0, 0, 1, 0, 0, 0, 2},
+                                  {0, 2, 2, 1, 1, 1, 2, 2, 0}};
+
+int val_pos[9][9] = {{2, 1, 2, 2, 1, 2, 2, 1, 2},
+                    {1, 4, 4,-3, 3,-3, 4, 4, 1},
+                    {2, 4, 6, 4, 2, 4, 6, 4, 2},
+                    {2,-3, 4, 6, 0, 6, 4,-3, 2},
+                    {1, 3, 2, 0, 4, 0, 2, 3, 1},
+                    {2,-3, 4, 6, 0, 6, 4,-3, 2},
+                    {2, 4, 6, 4, 2, 4, 6, 4, 2},
+                    {1, 4, 4,-3, 3,-3, 4, 4, 1},
+                    {2, 1, 2, 2, 1, 2, 2, 1, 2}};
 int COUNTER = 0;
 time_t START_TIME = 0;
 time_t MAX_TIME = 0;
@@ -157,17 +176,17 @@ bool get_if_state_is_a_finish_game_state(vector<vector<char>> state){
   return false;
 }
 
-int get_mean_distance_of_blacks_from_king(vector<vector<char>> state, vector<int> king_pos){
-  int dist = 0;
-  for (int row = 0; row < 9; row++){
-    for(int col = 0; col < 9; col++){
-      if(state[row][col] == 2){
-          dist = dist + sqrt((row - king_pos[0])*(row - king_pos[0]) + (col - king_pos[1])*(col - king_pos[1]));
-      }
-    }
-  }
-  return int((dist - 60)/2);
-}
+// int get_mean_distance_of_blacks_from_king(vector<vector<char>> state, vector<int> king_pos){
+//   int dist = 0;
+//   for (int row = 0; row < 9; row++){
+//     for(int col = 0; col < 9; col++){
+//       if(state[row][col] == 2){
+//           dist = dist + sqrt((row - king_pos[0])*(row - king_pos[0]) + (col - king_pos[1])*(col - king_pos[1]));
+//       }
+//     }
+//   }
+//   return int((dist - 60)/2);
+// }
 
 int get_num_of_blacks_around_king(vector<vector<char>> state, vector<int> king_pos){
   int start_raw, end_raw, start_column, end_column;
@@ -231,10 +250,59 @@ int get_black_that_close_passage(vector<vector<char>> state){
   return counter;
 }
 
+int get_mean_distance_of_blacks_from_king(vector<vector<char>> state, vector<int> king_pos){
+  int dist = 0;
+  for (int row = 0; row < 9; row++){
+    for(int col = 0; col < 9; col++){
+      if(state[row][col] == 2){
+          dist = dist + (row - king_pos[0]) + (col - king_pos[1]);
+      }
+    }
+  }
+  return int((dist - 60)/2);
+}
+
+int get_value_of_positions(vector<vector<char>> state){
+  int val = 0;
+  for (int row = 0; row < 9; row++){
+    for(int col = 0; col < 9; col++){
+      if(state[row][col] == 1 || state[row][col] == 3){
+          val = val + val_pos[row][col];
+      }
+      if(state[row][col] == 2){
+          val = val - val_pos[row][col];
+      }
+    }
+  }
+  return int((val + 20)/4);
+}
+
+int get_rhombus(vector<vector<char>> state){
+  int val = 0;
+  for (int row = 0; row < 7; row++){
+    for(int col = 1; col < 8; col++){
+      if(state[row][col] == 1 || state[row][col] == 3 || color_heuristic[row][col] == 1){
+          if((state[row+1][col-1] == 1 || state[row+1][col-1] == 3 || color_heuristic[row+1][col-1] == 1) &&
+                  (state[row+1][col+1] == 1 || state[row+1][col+1] == 3 || color_heuristic[row+1][col+1] == 1) &&
+                  (state[row+2][col] == 1 || state[row+2][col] == 3 || color_heuristic[row+2][col] == 1)){
+              val = val + 20;
+          }
+      }
+      if(state[row][col] == 2 || color_heuristic[row][col] == 1){
+          if((state[row+1][col-1] == 2 || color_heuristic[row+1][col-1] == 1) && (state[row+1][col+1] == 2 || color_heuristic[row+1][col+1] == 1) &&
+                  (state[row+2][col] == 2 || color_heuristic[row+2][col] == 1)){
+              val = val - 10;
+          }
+      }
+    }
+  }
+  return val;
+}
+
 int state_evaluation(vector<vector<char>> state){
   COUNTER++;
-  if (COUNTER % 30000 == 0){
-    if (time(NULL)-START_TIME > MAX_TIME){
+  if (COUNTER % 50000 == 0){
+    if (time(NULL)-START_TIME > MAX_TIME-1){
       throw 10;
     }
   }
@@ -247,10 +315,11 @@ int state_evaluation(vector<vector<char>> state){
   }
   int tot = 0;
   vector<int> peaces = get_num_of_peaces(state);
-  tot += peaces[0] * 15;
-  tot += peaces[1] * -10;
-  tot -= get_num_of_blacks_around_king(state, pos);
-  tot -= get_black_that_close_passage(state);
+  tot += peaces[0] * 85;
+  tot += peaces[1] * -50;
+  tot += get_value_of_positions(state);
+  tot += get_rhombus(state);
+  tot += get_mean_distance_of_blacks_from_king(state, pos);
   return tot;
 }
 
