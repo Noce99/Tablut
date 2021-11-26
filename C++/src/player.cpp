@@ -68,7 +68,7 @@ int main(int argc, char *argv[]){
     usleep(100*1000);
     s.recive_from_server();
     vector<vector<char>> state = initial_state;
-    string result = min_max_player_wrapper(state, white, time_needed, time(NULL)) + "\"WHITE\"}";
+    string result = min_max_player_wrapper(state, white, time_needed-3, time(NULL)) + "\"WHITE\"}";
     s.send_to_server(result);
     usleep(500*1000);
     s.recive_from_server();
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]){
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
       bool timedout = false;
-      result = min_max_player_wrapper(recived_status, white, time_needed, time(NULL)) + "\"WHITE\"}";
+      result = min_max_player_wrapper(recived_status, white, time_needed-3, time(NULL)) + "\"WHITE\"}";
       cout << result << endl;
       s.send_to_server(result);
       usleep(100*1000);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]){
       print_state(recived_status);
       cout << "+++++++++++++++++++++++++++++++++" << endl;
       bool timedout = false;
-      result = min_max_player_wrapper(recived_status, white, time_needed, time(NULL)) + "\"BLACK\"}";
+      result = min_max_player_wrapper(recived_status, white, time_needed-3, time(NULL)) + "\"BLACK\"}";
       cout << result << endl;
       s.send_to_server(result);
       usleep(100*1000);
