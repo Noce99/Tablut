@@ -271,7 +271,7 @@ int get_rhombus(vector<vector<char>> state){
   return val;
 }
 
-int state_evaluation(vector<vector<char>> state){
+int state_evaluation(vector<vector<char>> state, int depth){
   COUNTER++;
   if (COUNTER % 50000 == 0){
     if (time(NULL)-START_TIME > MAX_TIME-1){
@@ -280,10 +280,10 @@ int state_evaluation(vector<vector<char>> state){
   }
   vector<int> pos = get_king_position_on_board(state);
   if (pos == vector<int>()){
-    return -1000;
+    return -1000+50-depth;
   }
   if (color[pos[0]][pos[1]] == 2){
-    return 1000;
+    return 1000-50+depth;
   }
   int tot = 0;
   vector<int> peaces = get_num_of_peaces(state);
@@ -298,7 +298,7 @@ int state_evaluation(vector<vector<char>> state){
 tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> min_max(tuple<vector<vector<char>>, vector<int>, vector<int>> state, int depth, int max_depth, int alpha, int beta, bool maximize){
   vector<vector<char>> board = get<0>(state);
   if (depth == 0 || get_if_state_is_a_finish_game_state(board))
-    return make_tuple(make_tuple(vector<vector<char>>(), vector<int>(), vector<int>()), state_evaluation(board));
+    return make_tuple(make_tuple(vector<vector<char>>(), vector<int>(), vector<int>()), state_evaluation(board, depth));
   // fai un while true infinito e poi fai conto di avere la prossima mossa figlio in una variabile tipo child poi lo finisco io che è ciò che sto facendo ora
 
   if (maximize){
