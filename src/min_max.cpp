@@ -87,38 +87,10 @@ string min_max_player(vector<vector<char>> state, bool white, int max_depth){
     // print_state(get<0>(next_state));
     // cout << "Best Value: " << value << '\n';
     // cout << "--------------------------" << endl;
-    if (value == 1000){
-      cout << "Faccio subito quella che mi fa vincere SUCA!" << endl;
-      Moves M (state, true);
-      tuple<vector<vector<char>>, vector<int>, vector<int>> child;
-      while (true){
-        child = M.get_next_move();
-        if (get<0>(child) == vector<vector<char>>()){
-          break;
-        }
-        if (get_if_state_is_a_finish_game_state(get<0>(child))){
-          next_state = child;
-        }
-      }
-    }
   }else{
     tuple<tuple<vector<vector<char>> , vector<int>, vector<int> >, int> result = min_max(make_tuple(state, vector<int>(), vector<int>()), max_depth, max_depth, -10000, 10000, false);
     next_state = get<0>(result);
     value = get<1>(result);
-    if (value == -1000){
-      cout << "Faccio subito quella che mi fa vincere SUCA!" << endl;
-      Moves M (state, true);
-      tuple<vector<vector<char>>, vector<int>, vector<int>> child;
-      while (true){
-        child = M.get_next_move();
-        if (get<0>(child) == vector<vector<char>>()){
-          break;
-        }
-        if (get_if_state_is_a_finish_game_state(get<0>(child))){
-          next_state = child;
-        }
-      }
-    }
     // print_state(get<0>(next_state));
     // cout << "Best Value: " << value << '\n';
   }
