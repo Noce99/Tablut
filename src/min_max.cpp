@@ -46,15 +46,15 @@ const int color_heuristic[9][9] = {{0, 2, 2, 1, 1, 1, 2, 2, 0},
                                   {2, 0, 0, 0, 1, 0, 0, 0, 2},
                                   {0, 2, 2, 1, 1, 1, 2, 2, 0}};
 
-int val_pos[9][9] = {{2, 1, 2, 2, 1, 2, 2, 1, 2},
-                    {1, 4, 4,-3, 3,-3, 4, 4, 1},
+int val_pos[9][9] = {{2, 1, 2, 6, 6, 6, 2, 1, 2},
+                    {1, 4, 4,-3, 6,-3, 4, 4, 1},
                     {2, 4, 6, 4, 2, 4, 6, 4, 2},
-                    {2,-3, 4, 6, 0, 6, 4,-3, 2},
-                    {1, 3, 2, 0, 4, 0, 2, 3, 1},
-                    {2,-3, 4, 6, 0, 6, 4,-3, 2},
+                    {6,-3, 4, 6, 0, 6, 4,-3, 6},
+                    {6, 6, 2, 0, 4, 0, 2, 6, 6},
+                    {6,-3, 4, 6, 0, 6, 4,-3, 6},
                     {2, 4, 6, 4, 2, 4, 6, 4, 2},
-                    {1, 4, 4,-3, 3,-3, 4, 4, 1},
-                    {2, 1, 2, 2, 1, 2, 2, 1, 2}};
+                    {1, 4, 4,-3, 6,-3, 4, 4, 1},
+                    {2, 1, 2, 6, 6, 6, 2, 1, 2}};
 int COUNTER = 0;
 time_t START_TIME = 0;
 time_t MAX_TIME = 0;
@@ -190,35 +190,70 @@ int get_num_of_blacks_around_king(vector<vector<char>> state, vector<int> king_p
       }
     }
   }
-  return counter;
+  return counter * 20;
 }
 
 int get_black_that_close_passage(vector<vector<char>> state){
   int counter = 0;
   if (state[2][1] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[1][2] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[1][6] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[2][7] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[6][1] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[7][2] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[6][7] == 2){
-    counter ++;
+	  counter += 4;
   }
   if (state[7][6] == 2){
-    counter ++;
+	  counter += 4;
   }
+  
+  if (state[2][2] == 2){
+  	  counter += 10;
+    }
+  if (state[2][6] == 2){
+  	  counter += 10;
+    }
+  if (state[6][2] == 2){
+  	  counter += 10;
+    }
+  if (state[6][6] == 2){
+  	  counter += 10;
+    }
+  
+  
+  if (state[2][2] == 3){
+	  if (state[2][1] == 1 ^ state[1][2] == 1){
+		  counter -= 20;
+      }
+  }
+  if (state[6][2] == 3){
+  	  if (state[6][1] == 1 ^ state[7][2] == 1){
+  		  counter -= 20;
+        }
+    }
+  if (state[2][6] == 3){
+  	  if (state[1][6] == 1 ^ state[2][7] == 1){
+  		  counter -= 20;
+        }
+    }
+  if (state[6][6] == 3){
+  	  if (state[7][6] == 1 ^ state[6][7] == 1){
+  		  counter -= 20;
+        }
+    }
   return counter;
 }
 
@@ -257,7 +292,7 @@ int get_rhombus(vector<vector<char>> state){
           if((state[row+1][col-1] == 1 || state[row+1][col-1] == 3 || color_heuristic[row+1][col-1] == 1) &&
                   (state[row+1][col+1] == 1 || state[row+1][col+1] == 3 || color_heuristic[row+1][col+1] == 1) &&
                   (state[row+2][col] == 1 || state[row+2][col] == 3 || color_heuristic[row+2][col] == 1)){
-              val = val + 20;
+              val = val + 10;
           }
       }
       if(state[row][col] == 2 || color_heuristic[row][col] == 1){
@@ -287,12 +322,14 @@ int state_evaluation(vector<vector<char>> state, int depth){
   }
   int tot = 0;
   vector<int> peaces = get_num_of_peaces(state);
-  tot += peaces[0] * 85;
-  tot += peaces[1] * -50;
+  tot += peaces[0] * 90;
+  tot += peaces[1] * -60;
   tot += get_value_of_positions(state);
-  tot += get_rhombus(state);
+  //tot += get_rhombus(state);
   tot += get_mean_distance_of_blacks_from_king(state, pos);
-  return tot;
+  tot -= get_num_of_blacks_around_king(state, pos);
+  tot -= get_black_that_close_passage(state);
+  return tot + 300;
 }
 
 tuple<tuple<vector<vector<char>> , vector<int>, vector<int>>, int> min_max(tuple<vector<vector<char>>, vector<int>, vector<int>> state, int depth, int max_depth, int alpha, int beta, bool maximize){
