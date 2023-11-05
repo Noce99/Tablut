@@ -1,4 +1,4 @@
-# Einars Team - Winners of Tablut Championship 2021 🥇
+# Einars Team - Tablut Competition 2021
 Team members: Enrico Mannocci, Matteo Periani, Riccardo Paolini.
 
 Achieved 🥇 place in the championship and 🥉 place in the tournament.
